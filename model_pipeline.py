@@ -10,68 +10,109 @@
 
 """GOAL: Topic detection"""
 
+# Inspiration https://github.com/FelixChop/MediumArticles/blob/master/LDA-BBC.ipynb
+
+# TODO what is this Chandigarh stuff in body?
+
 import read_data
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import StandardScaler
-
+from itertools import chain
+import re
+import nltk
+from nltk.stem.wordnet import WordNetLemmatizer
+from nltk.corpus import wordnet
+from nltk.corpus import stopwords
 
 # read in a given number of articles
-body_df = read_data.get_body_df(n_articles=10)
+df = read_data.get_body_df(n_articles=10)
+
+# sentence tokenization
+df["sentences"] = df["body"].apply(nltk.sent_tokenize)
+
+# word tokenization
+df["token"] = df["sentences"].apply(lambda x: [nltk.word_tokenize(sentence) for sentence in x])
+
+# POS tagging
+df["POS_token"] = df["token"].apply(lambda x: [nltk.pos_tag(sentence) for sentence in x])
+
+# lemmatization
+def get_wordnet_pos(treebank_tag):
+    if treebank_tag.startswith("J"):
+        return wordnet.ADJ
+    elif treebank_tag.startswith("V"):
+        return wordnet.VERB
+    elif treebank_tag.startswith("N"):
+        return wordnet.NOUN
+    elif treebank_tag.startswith("R"):
+        return wordnet.ADV
+    elif treebank_tag.startswith("S"):
+        return wordnet.ADJ_SAT
+    else:
+        return ""
+
+def lemmatize(pos_token_list):
+    """@param pos_token_list: list of POS token"""
+    result = []
+    for word in pos_token_list:
+        if get_wordnet_pos(word[1]) != "":
+            result.append(lemmatizer.lemmatize(word[0], get_wordnet_pos(word[1])))
+        else:
+            result.append(word[0])
+    return result
+        
+
+lemmatizer = WordNetLemmatizer()
+df["lemmas"] = df["POS_token"].apply(lambda x: [lemmatize(sentence) for sentence in x])
+
+# remove stopwords
+custom_stopwords = stopwords.words("english")
+
+def upper_lower(token_list):
+    res = []
+    for token in token_list:
+        if token.isalpha() and (1 < len(token)) and (token.lower() not in custom_stopwords):
+            res.append(token.lower())
+    return res
+
+df["token"] = df["lemmas"].apply(lambda x: list(chain.from_iterable(x)))
+df["token"] = df["token"].apply(upper_lower)
 
 
-# TODO see how this works
-from sklearn.base import BaseEstimator, TransformerMixin
-class TextSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, field):
-        self.field = field
-    def fit(self, X, y=None):
-        return self
-    def transform(self, X):
-        return X[self.field]
-class NumberSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, field):
-        self.field = field
-    def fit(self, X, y=None):
-        return self
-    def transform(self, X):
-        return X[[self.field]]
+### LDA (Latent Dirichlet allocation)
+
+from gensim.models import Phrases
+
+# TODO what's going on here
+token = df.token.tolist()
+bigram_model = Phrases(token)
+trigram_model = Phrases(bigram_model[token], min_count=1)
+token = list(trigram_model[bigram_model[token]])
+
+# Run LDA
+from gensim import models
+from gensim import corpora
+import numpy as np
+
+dictionary_LDA = corpora.Dictionary(token)
+dictionary_LDA.filter_extremes(no_below=3)
+corpus = [dictionary_LDA.doc2bow(t) for t in token]
+
+np.random.seed(123456)
+num_topics = 3
+lda_model = models.LdaModel(corpus, num_topics=num_topics, \
+                            id2word=dictionary_LDA, \
+                            passes=4, alpha=[0.01]*num_topics, \
+                            eta=[0.01]*len(dictionary_LDA.keys()))
+
+### Exploration of LDA results
 
 
-# TODO adapt to our needs
-import nltk
-def Tokenizer(str_input):
-    words = re.sub(r"[^A-Za-z0-9\-]", " ", str_input).lower().split()
-    porter_stemmer=nltk.PorterStemmer()
-    words = [porter_stemmer.stem(word) for word in words]
-    return words
+# Looks pretty good!
+for i, topic in lda_model.show_topics(
+    formatted=True, num_topics=num_topics, num_words=20):
+    print(str(i)+": "+ topic)
+    print()
 
-
-classifier = Pipeline([
-    ('features', FeatureUnion([
-        ('text', Pipeline([
-            ('colext', TextSelector('Text')),
-            ('tfidf', TfidfVectorizer(tokenizer=Tokenizer, stop_words=stop_words,
-                     min_df=.0025, max_df=0.25, ngram_range=(1,3))),
-        ])),
-        ('words', Pipeline([
-            ('wordext', NumberSelector('TotalWords')),
-            ('wscaler', StandardScaler()),
-        ])),
-    ])),
-])
-
-
-import nltk
-
-sentence = "At eight o'clock on Thursday morning Arthur didn't feel very good.\n"
-tokens = nltk.word_tokenize(sentence)
-
-tagged = nltk.pos_tag(tokens)
-
-entities = nltk.chunk.ne_chunk(tagged)
-
-
-from nltk.corpus import treebank
-t = treebank.parsed_sents('wsj_0001.mrg')[0]
-t.draw()
+# Topics to data frame

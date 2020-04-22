@@ -20,6 +20,7 @@ sklearn, dask pipelines: https://medium.com/@chrisfotache/text-classification-in
     - constituency grammars
     - dependency grammars (often more practical)
 4) Lemmatization & Stemming
+    - https://stackoverflow.com/questions/15586721/wordnet-lemmatization-and-pos-tagging-in-python
 5) Stopword removal
 5) Vectorization
     https://monkeylearn.com/blog/beginners-guide-text-vectorization/
