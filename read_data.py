@@ -1,17 +1,47 @@
 import jsonlines
-import json
+from datetime import datetime
+import pandas as pd
 
-counter = 0
-max_count = 3
 
-with jsonlines.open('aylien-covid-news.jsonl') as f:
-    for line in f.iter():
-        if(counter  >= max_count):
-            break
-        print(counter)
-        # d = json.loads(line)
-        # print(line.keys())
-        # print(line.items())
-        # print(line["sentiment"])
-        print(line['body'])
-        counter += 1
+def filter_articles(n_articles, source_name=None, start_date=None, end_date=None):
+    """filter articles according to specifications"""
+    articles = []
+    counter = 0
+    with jsonlines.open("aylien-covid-news.jsonl") as f:
+        for line in f:
+            if(counter  >= n_articles):
+                break
+            if not (source_name is None):
+                if line["source"]["name"] != source_name:
+                    continue
+            if not (start_date is None):
+                # TODO some nice date comparison
+                t = line["published_at"].split(" ")[0]
+                date = datetime.strptime(t, "%Y-%m-%d")
+                if start_date > date:
+                    continue
+            if not (end_date is None):
+                t = line["published_at"].split(" ")[0]
+                date = datetime.strptime(t, "%Y-%m-%d")
+                if end_date < date:
+                    continue
+            articles.append(line)
+            counter += 1
+
+    return articles
+
+def available_metadata():
+    """print tags for available metadata"""
+    with jsonlines.open("aylien-covid-news.jsonl") as f:
+        for line in f:
+            return line.keys()
+
+
+def get_body_df(n_articles, source_name=None, published_before=None, published_after=None):
+    articles = filter_articles(n_articles, source_name, published_before, published_after)
+    bodies = [i["body"] for i in articles]
+    df = pd.DataFrame({
+        "body": bodies
+    })
+    return df
+
