@@ -27,10 +27,9 @@ from gensim import models
 from gensim import corpora
 
 
-# TODO Named entitiy recognition!
-# we should reslove anaphoras somewhere
-
 """GOAL: Topic detection"""
+
+# TODO apparently people don't do stemming anymore these days
 
 ### Vectorization
 

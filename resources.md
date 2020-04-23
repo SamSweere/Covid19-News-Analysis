@@ -10,6 +10,8 @@ http://nlp.town/blog/off-the-shelf-sentiment-analysis/
 # Libraries
 word2vec
 NLTK
+gensim
+StanfordNER / spacy https://spacy.io/usage/linguistic-features
 sklearn, dask pipelines: https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nltk-tf-idf-xgboost-and-more-b83451a327e0
 
 
@@ -50,6 +52,11 @@ https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nlt
 ## Keyword Extraction
 
 ## Named Entity Recognition
+https://medium.com/sicara/train-ner-model-with-nltk-stanford-tagger-english-french-german-6d90573a9486
+https://towardsdatascience.com/named-entity-recognition-with-nltk-and-spacy-8c4a7d88e7da
+## papers
+https://arxiv.org/pdf/1812.09449.pdf
+https://arxiv.org/pdf/1910.11470.pdf 
 
 ## Clustering
 
