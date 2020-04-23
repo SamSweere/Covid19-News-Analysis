@@ -38,6 +38,14 @@ Bag of words vectorization
 ## Text Classification
 
 ## Topic Analysis
+LDA (Latent Dirichlet Allocation
+https://towardsdatascience.com/topic-modelling-in-python-with-nltk-and-gensim-4ef03213cd21)
+https://github.com/FelixChop/MediumArticles/blob/master/LDA-BBC.ipynb
+https://cran.r-project.org/web/packages/LDAvis/vignettes/details.pdf
+
+
+## Classification
+https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nltk-tf-idf-xgboost-and-more-b83451a327e0
 
 ## Keyword Extraction
 

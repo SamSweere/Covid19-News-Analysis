@@ -37,8 +37,8 @@ def available_metadata():
             return line.keys()
 
 
-def get_body_df(n_articles, source_name=None, published_before=None, published_after=None):
-    articles = filter_articles(n_articles, source_name, published_before, published_after)
+def get_body_df(n_articles, source_name=None, start_date=None, end_date=None):
+    articles = filter_articles(n_articles, source_name, start_date, end_date)
     bodies = [i["body"] for i in articles]
     df = pd.DataFrame({
         "body": bodies
