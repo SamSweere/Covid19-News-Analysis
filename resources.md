@@ -1,5 +1,5 @@
-Main source: https://monkeylearn.com/text-analysis/
-
+Entry source: https://monkeylearn.com/text-analysis/
+Main library: spacy
 
 # Pre-trained models
 https://github.com/facebookresearch/InferSent
@@ -11,7 +11,8 @@ http://nlp.town/blog/off-the-shelf-sentiment-analysis/
 word2vec
 NLTK
 gensim
-StanfordNER / spacy https://spacy.io/usage/linguistic-features
+spacy https://spacy.io/usage/linguistic-features https://spacy.io/usage/spacy-101
+StanfordNER
 sklearn, dask pipelines: https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nltk-tf-idf-xgboost-and-more-b83451a327e0
 
 
@@ -41,6 +42,7 @@ Bag of words vectorization
 
 ## Topic Analysis
 LDA (Latent Dirichlet Allocation
+https://towardsdatascience.com/building-a-topic-modeling-pipeline-with-spacy-and-gensim-c5dc03ffc619
 https://towardsdatascience.com/topic-modelling-in-python-with-nltk-and-gensim-4ef03213cd21)
 https://github.com/FelixChop/MediumArticles/blob/master/LDA-BBC.ipynb
 https://cran.r-project.org/web/packages/LDAvis/vignettes/details.pdf
@@ -52,8 +54,8 @@ https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nlt
 ## Keyword Extraction
 
 ## Named Entity Recognition
-https://medium.com/sicara/train-ner-model-with-nltk-stanford-tagger-english-french-german-6d90573a9486
 https://towardsdatascience.com/named-entity-recognition-with-nltk-and-spacy-8c4a7d88e7da
+https://medium.com/sicara/train-ner-model-with-nltk-stanford-tagger-english-french-german-6d90573a9486
 ## papers
 https://arxiv.org/pdf/1812.09449.pdf
 https://arxiv.org/pdf/1910.11470.pdf 

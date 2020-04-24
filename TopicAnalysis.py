@@ -30,6 +30,7 @@ from gensim import corpora
 """GOAL: Topic detection"""
 
 # TODO apparently people don't do stemming anymore these days
+# TODO it's probably better if we let spacy do this
 
 ### Vectorization
 
