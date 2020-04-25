@@ -23,6 +23,9 @@ from datetime import datetime
 
 # TODO it might make sense to somehow pre-allocate the data well
 
+
+### Topic Analysis
+
 # load data
 start_date = datetime.strptime("2020-03-10", "%Y-%m-%d")
 end_date = datetime.strptime("2020-04-20", "%Y-%m-%d")
@@ -44,9 +47,7 @@ topic_df = TopicAnalysis.predict_topic(lda_model, dictionary_LDA, num_topics, [d
 print(topic_df)
 
 
-IsADirectoryError
 # Visualize results
-
 import pyLDAvis.gensim
 lda_display3 = pyLDAvis.gensim.prepare(
     lda_model, corpus, dictionary_LDA, sort_topics=False)
