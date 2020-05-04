@@ -39,12 +39,14 @@ def count_most_frequent(group):
 
 
 if __name__ == "__main__":
-
+    print("Loading the data")
     df = read_data.get_body_df(
         start_date=datetime.strptime("2020-03-29", "%Y-%m-%d"),
         end_date=datetime.strptime("2020-04-06", "%Y-%m-%d"),
-        articles_per_period=100,
+        articles_per_period=10,
     )
+
+    print("Starting NLP")
 
     nlp = spacy.load("en_core_web_sm")  # "eng_core_web_lg" for better but slower results
     df["nlp"] = [nlp(doc) for doc in df.body]  # might be a lot faster if we merge all articles of a day into one document?
@@ -55,6 +57,8 @@ if __name__ == "__main__":
     df_most_common = df_most_common.agg(sum).sort_values(by="most_common_1_num", ascending=False).reset_index()
     df_most_common = df_most_common.groupby(by=["publication_date"])
     df_most_common = df_most_common.head(10)
+
+    print("Starting visualization")
 
     visualization.animate_NER(df_most_common)
 

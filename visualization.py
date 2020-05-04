@@ -33,6 +33,6 @@ def animate_NER(df_most_common):
     anim.save("figures/topic_trends.gif", writer='imagemagick', fps=1)
 
     # save as .mp4 for yt upload
-    FFwriter = FFMpegWriter(fps=1, codec="libx264")     
+    FFwriter = FFMpegWriter(fps=1, codec="libx265")     
     anim.save('figures/topic_trends.mp4', writer=FFwriter)
 
