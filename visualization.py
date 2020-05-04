@@ -12,7 +12,9 @@ from datetime import datetime, timedelta
 # test_id = 5
 # displacy.serve(nlp(str(articles[test_id])), style='ent')
 # displacy.serve(nlp(str(articles[test_id])), style='dep', options = {'distance': 120})
-
+import os
+if not os.path.exists("figures"):
+    os.makedirs("figures")
 
 def animate_NER(df_most_common):
     fig, ax = plt.subplots(figsize=(9, 6))
