@@ -1,5 +1,7 @@
 # User added
 figures/
+tm_venv/
+.vscode/
 
 *.csv
 *.jsonl

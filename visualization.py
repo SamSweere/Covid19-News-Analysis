@@ -17,7 +17,7 @@ if not os.path.exists("figures"):
     os.makedirs("figures")
 
 def animate_NER(df_most_common):
-    fig, ax = plt.subplots(figsize=(9, 6))
+    fig, ax = plt.subplots(figsize=(11, 8))
     ax = sns.barplot(data=df_most_common, x="most_common_1_num", y="most_common_1")
 
     def animate(i):
@@ -37,4 +37,9 @@ def animate_NER(df_most_common):
     # save as .mp4 for yt upload
     FFwriter = FFMpegWriter(fps=1, codec="libx265")     
     anim.save('figures/topic_trends.mp4', writer=FFwriter)
+
+
+def bar_chart_race():
+    # TODO https://towardsdatascience.com/bar-chart-race-in-python-with-matplotlib-8e687a5c8a41
+    pass
 

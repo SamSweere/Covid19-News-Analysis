@@ -56,6 +56,10 @@ https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nlt
 ## Named Entity Recognition
 https://towardsdatascience.com/named-entity-recognition-with-nltk-and-spacy-8c4a7d88e7da
 https://medium.com/sicara/train-ner-model-with-nltk-stanford-tagger-english-french-german-6d90573a9486
+
+### Coreference Resolution
+https://medium.com/district-data-labs/basics-of-entity-resolution-with-python-and-dedupe-bc87440b64d4
+
 ## papers
 https://arxiv.org/pdf/1812.09449.pdf
 https://arxiv.org/pdf/1910.11470.pdf 
