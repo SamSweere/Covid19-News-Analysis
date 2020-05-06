@@ -2,6 +2,7 @@
 figures/
 tm_venv/
 .vscode/
+models/
 
 *.csv
 *.jsonl
