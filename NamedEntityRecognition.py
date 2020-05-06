@@ -50,6 +50,9 @@ if __name__ == "__main__":
 
     nlp = spacy.load("en_core_web_sm")  # "eng_core_web_lg" for better but slower results
     df["nlp"] = [nlp(doc) for doc in df.body]  # might be a lot faster if we merge all articles of a day into one document?
+    
+
+
     for token in doc:
         print(token.text in nlp.vocab)
         print(token.orth in nlp.vocab)
