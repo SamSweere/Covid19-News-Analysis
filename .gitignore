@@ -1,5 +1,6 @@
 # User added
 figures/
+models/
 
 *.csv
 *.jsonl
