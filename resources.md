@@ -37,6 +37,7 @@ sklearn, dask pipelines: https://medium.com/@chrisfotache/text-classification-in
 
 Bag of words vectorization
 (word2vec?)
+spacy models: https://spacy.io/models
 
 ## Text Classification
 

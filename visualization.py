@@ -38,8 +38,3 @@ def animate_NER(df_most_common):
     FFwriter = FFMpegWriter(fps=1, codec="libx265")     
     anim.save('figures/topic_trends.mp4', writer=FFwriter)
 
-
-def bar_chart_race():
-    # TODO https://towardsdatascience.com/bar-chart-race-in-python-with-matplotlib-8e687a5c8a41
-    pass
-
