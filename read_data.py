@@ -4,7 +4,7 @@ import pandas as pd
 from copy import deepcopy
 
 
-def filter_articles(n_articles=None, source_name=None, start_date=None, end_date=None, articles_per_period=None):
+def filter_articles(n_articles=None, source_name=None, start_date=None, end_date=None, articles_per_period=None, max_length=None):
     """
     filter articles according to specifications
     our data seems to be sorted newest to oldest -> retrieving new data is much faster
@@ -39,6 +39,8 @@ def filter_articles(n_articles=None, source_name=None, start_date=None, end_date
             if not (end_date is None):
                 if end_date < d_o_p:
                     continue
+            if len(line["body"]) > max_length:
+                continue
             articles.append(line)
             date_of_publication.append(deepcopy(d_o_p))
             counter += 1
@@ -56,8 +58,8 @@ def available_metadata():
             return line.keys()
 
 
-def get_body_df(n_articles=None, source_name=None, start_date=None, end_date=None, articles_per_period=None):
-    df = filter_articles(n_articles, source_name, start_date, end_date, articles_per_period)
+def get_body_df(n_articles=None, source_name=None, start_date=None, end_date=None, articles_per_period=None, max_length=None):
+    df = filter_articles(n_articles, source_name, start_date, end_date, articles_per_period, max_length)
     df["body"] = [i["body"] for i in df["article"]]
     return df[["body", "publication_date"]]
 

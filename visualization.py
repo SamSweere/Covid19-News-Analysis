@@ -31,7 +31,7 @@ def animate_NER(df_most_common):
     n_frames = len(df_most_common["publication_date"].unique()) #Number of frames
     anim = FuncAnimation(fig, animate, repeat=True, blit=False, frames=n_frames-1, interval=800)
     
-    # save as .gif
+    # save as .gif # we sometimes get problems if we only have one data point
     anim.save("figures/topic_trends.gif", writer='imagemagick', fps=1)
 
     # save as .mp4 for yt upload

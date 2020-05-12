@@ -47,6 +47,7 @@ https://towardsdatascience.com/building-a-topic-modeling-pipeline-with-spacy-and
 https://towardsdatascience.com/topic-modelling-in-python-with-nltk-and-gensim-4ef03213cd21)
 https://github.com/FelixChop/MediumArticles/blob/master/LDA-BBC.ipynb
 https://cran.r-project.org/web/packages/LDAvis/vignettes/details.pdf
+DBpedia spotlight paper: http://jodaiber.de/doc/entity.pdf
 
 
 ## Classification

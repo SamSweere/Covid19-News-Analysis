@@ -45,8 +45,8 @@ def draw_barchart(ax, df, date:int, date_column:str, name_column:str, group_colu
         # ax.text(value-dx, i-.25, group_lk[name], size=10, color='#444444', ha='right', va='baseline')
         ax.text(value+dx, i,     f'{value:,.0f}',  size=14, ha='left',  va='center')
     # axis labels
-    ax.text(1, 0.4, date, transform=ax.transAxes, color='#777777', size=46, ha='right', weight=800)
-    ax.text(0, 1.06, 'Population (thousands)', transform=ax.transAxes, size=12, color='#777777')
+    ax.text(1, 0.4, str(date)[0:10], transform=ax.transAxes, color='#777777', size=46, ha='right', weight=800)
+    ax.text(0, 1.06, 'Primary entity of n articles (coreference resolved)', transform=ax.transAxes, size=12, color='#777777')
     # axis ticks
     ax.xaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))
     ax.xaxis.set_ticks_position('top')
@@ -66,12 +66,15 @@ def draw_barchart(ax, df, date:int, date_column:str, name_column:str, group_colu
 #     draw_barchart(df, days, "year", "name", "group", "value")
 
 
-def create_barchart_race(df):
+def create_barchart_race(df, start_date, end_date):
+
+    # TODO use start_date, end_date
+    period_length = (end_date - start_date).days
 
     def curry_barchart(days):
         nonlocal df
         nonlocal ax
-        date = datetime.strptime("2020-03-28", "%Y-%m-%d") + timedelta(days)
+        date = start_date + timedelta(days)
 
         # CUSTOM
         draw_barchart(
@@ -83,11 +86,8 @@ def create_barchart_race(df):
             group_column=None,
             value_column="most_common_1_num"
         )
-
-    plt.close("all")
     fig, ax = plt.subplots(figsize=(15, 8))
 
-    # animator = animation.FuncAnimation(fig, curry_barchart_standard, frames=range(1900, 2019))
-    animator = animation.FuncAnimation(fig, curry_barchart, frames=range(0, 10))
-    animator.save("figures/animation_attempt.mov")
+    animator = animation.FuncAnimation(fig, curry_barchart, frames=range(0, period_length))
+    animator.save("figures/animation_attempt.mov", fps=1)
     plt.close("all")
