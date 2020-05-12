@@ -12,6 +12,7 @@ import bar_chart_race
 import neuralcoref
 from datetime import datetime
 import spacy_dbpedia_spotlight
+import os
 
 
 # currently we can process about 500 articles per minute
@@ -138,40 +139,48 @@ class NamedEntityRecognizer:
     def load_preloaded(self, path):
         return pd.read_csv(path)
 
+    def cum_sum_df(self, df):
+        """ return df with monotonically increasing entity mentions """
+        # TODO this does not ensure continuity in case some entity is missing entirely on some days
+        # should be kinda rare but still possible...
+        df = df.sort_values(by=["publication_date", "most_common_1"])
+        df_gb = df.groupby(by=["most_common_1"])
+        df["cum_sum"] = df_gb.most_common_1_num.transform(pd.Series.cumsum)
+        return df
+
 
 if __name__ == "__main__":
 
+    if not os.path.isdir("experiments"):
+        os.mkdir("experiments")
 
     print("Loading Data...\t", str(datetime.now()))
-    # TODO make start date somehow dynamic for visualization
     start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=1000,
-        max_length=500  # kinda needed for dbpedia pipeline rn
+        articles_per_period=300,
+        max_length=300
     )
 
     NER = NamedEntityRecognizer()
     # might be a lot faster if we merge all articles of a day into one document?
     # df = NER.load_preloaded()
 
-    # TODO we can't save all the preliminary stages, we'll run out of ram in no time
+    # TODO we can't keep saving all the preliminary stages in our data frame, we'll run out of ram
     df_pp = NER.spacy_preprocessing(df, model_size="sm")
-    # TODO I guess we'll have to download the dbpedia thingy, we can't query their api often enough :()
     df_pp = NER.dbpedia_ner(df_pp, model_size="sm")
-    # df_pp.to_csv("df_pp.csv")
     df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
     df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
     df_most_common = NER.most_common_entities(df_pp)
-    print(df_most_common.sort_values(by=["publication_date"]))
+    df_most_common = NER.cum_sum_df(df_most_common)
+    df_most_common.to_csv("df_most_common"+str(datetime.now())+".csv")
+    print(df_most_common)
     NER.visualize(df_most_common, start_date, end_date)
 
 
 # TODO a lot of confusion for company names etc.
-# TODO Entity Resolution?
-
 # TODO for word vectors & similarity, we might have to train new model to catch stuff like "Coronavirus"
 # TODO basically: tailor model to our data set
 
