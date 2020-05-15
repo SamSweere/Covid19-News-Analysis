@@ -6,3 +6,4 @@ We could restrict results by adding query to api call
 Of all entity thingys, we take the ones that start with 'DBPedia:'
 Currently, we take all entities we get and we check if our query string is in there
 We have overlapping entiies (e. g. Washington D.C), we resolve by taking larger one!
+Fight duplicate entities ("Trump" vs "Donald Trump")

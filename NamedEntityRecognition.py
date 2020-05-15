@@ -12,6 +12,7 @@ import bar_chart_race
 import neuralcoref
 from datetime import datetime
 import spacy_dbpedia_spotlight
+import numpy as np
 import os
 
 
@@ -69,17 +70,19 @@ class NamedEntityRecognizer:
         print("Completed NLP by...\t", str(datetime.now()))
         return df
 
-    def most_common_entities(self, df):
+    def sum_period_most_common_entities(self, df):
         """ 
         @param df: DataFrame with "nlp" column containing spacy preprocessing
         @param visualization: create bar chart race
         """
+        # sum up entities for each publication date
+        df_gb = df.groupby(by=["publication_date", "most_common_1"])
+        df_most_common = df_gb.agg(sum).reset_index()
+        return df_most_common
 
-        # add entities for each publication date
-        df_most_common = df.groupby(by=["publication_date", "most_common_1"])
-        df_most_common = df_most_common.agg(sum).sort_values(by="most_common_1_num", ascending=False).reset_index()
-
-        # select top 10 for each publication date
+    def select_most_common_per_period(self, df_most_common):
+        # select top 10 for each publication date by cum_sum
+        df_most_common = df_most_common.sort_values(by=["publication_date", "cum_sum"], ascending=False).reset_index()
         df_most_common = df_most_common.groupby(by=["publication_date"])
         df_most_common = df_most_common.head(10)
         return df_most_common
@@ -104,7 +107,36 @@ class NamedEntityRecognizer:
         # For some reason all the NLP resolved are None!!
         df[["most_common_1", "most_common_1_num"]] = pd.DataFrame.from_records(
             df[nlp_doc_colname].apply(find_most_common_entity))
+        df.dropna(inplace=True)     
         return df
+
+    def fill_entity_gaps(self, df_most_common):
+        """
+        make sure we keep an absent but known entity around
+        to avoid the bar from disappearing in bar chart race 
+        """
+        assert set(df_most_common.columns) == set(['publication_date', 'most_common_1', 'most_common_1_num'])
+
+        # identify missing values
+        all_entities = set(df_most_common["most_common_1"].unique())
+        df_gb = df_most_common.groupby(by=["publication_date"])
+        date_entities = df_gb["most_common_1"].aggregate(lambda x: set(x))
+        
+        # collect rows to add
+        rows_to_add = []
+        for i, d_e in enumerate(date_entities):
+            missing_ents = all_entities.difference(d_e)
+            date = date_entities.index[i]
+            for e in missing_ents:
+                row = (date, e, 0.0)
+                rows_to_add.append(row)
+
+        # add missing rows and sort again
+        df_missing = pd.DataFrame(rows_to_add, columns=df_most_common.columns)
+        df_most_common = pd.concat((df_most_common, df_missing), axis=0).reset_index()
+        df_most_common.sort_values(by=["publication_date", "most_common_1"], inplace=True)
+
+        return df_most_common
 
     def count_most_frequent(self, group):
         # current approach: most common of the most common - should be ok, I think
@@ -145,7 +177,8 @@ class NamedEntityRecognizer:
         # should be kinda rare but still possible...
         df = df.sort_values(by=["publication_date", "most_common_1"])
         df_gb = df.groupby(by=["most_common_1"])
-        df["cum_sum"] = df_gb.most_common_1_num.transform(pd.Series.cumsum)
+        df["cum_sum"] = df_gb["most_common_1_num"].apply(pd.Series.cumsum)
+        df.sort_values(by=["publication_date", "cum_sum"], ascending=False, inplace=True)
         return df
 
 
@@ -160,7 +193,7 @@ if __name__ == "__main__":
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=300,
+        articles_per_period=100,
         max_length=300
     )
 
@@ -172,15 +205,21 @@ if __name__ == "__main__":
     df_pp = NER.spacy_preprocessing(df, model_size="sm")
     df_pp = NER.dbpedia_ner(df_pp, model_size="sm")
     df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+    
+    # TODO DBPedia should identify Trump and Donald Trum as same entity - we need to make sure we catch that
+    
+    # TODO seems like we are still not visualizing everything correctly!
     df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
-    df_most_common = NER.most_common_entities(df_pp)
+    # TODO this step doesn't give us a proper data frame
+    df_most_common = NER.sum_period_most_common_entities(df_pp)
+    df_most_common = NER.fill_entity_gaps(df_most_common)
     df_most_common = NER.cum_sum_df(df_most_common)
-    df_most_common.to_csv("df_most_common"+str(datetime.now())+".csv")
+    df_most_common = NER.select_most_common_per_period(df_most_common)
+
+    # TODO we need to do everything in the right order!
+
+    df_most_common.to_csv("logs/df_most_common"+str(datetime.now())+".csv")
     print(df_most_common)
     NER.visualize(df_most_common, start_date, end_date)
 
-
-# TODO a lot of confusion for company names etc.
-# TODO for word vectors & similarity, we might have to train new model to catch stuff like "Coronavirus"
-# TODO basically: tailor model to our data set
-
+    pass

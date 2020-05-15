@@ -2,6 +2,7 @@
 TextMiningCourse/tm_venv/lib/python3.6/site-packages/spacy_dbpedia_spotlight/entity_linker.py
 
 # docker image
+sudo docker run -itd --restart unless-stopped -p 2222:80 dbpedia/spotlight-english spotlight.sh
 https://github.com/dbpedia-spotlight/spotlight-docker
 
 
