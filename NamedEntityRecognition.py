@@ -13,6 +13,7 @@ import neuralcoref
 from datetime import datetime
 import spacy_dbpedia_spotlight
 import numpy as np
+from collections import namedtuple
 import os
 
 
@@ -31,7 +32,7 @@ class NamedEntityRecognizer:
         # TODO do we need/want entity merger?
         # merge_ents = nlp.create_pipe("merge_entities'")
         # nlp.add_pipe(merge_ents)
-        coref = neuralcoref.NeuralCoref(nlp.vocab, greedyness=0.5)
+        coref = neuralcoref.NeuralCoref(nlp.vocab, greedyness=0.4)
         nlp.add_pipe(coref, name='neuralcoref')
         print("Starting NLP...\t", str(datetime.now()))
         print("------------------------")
@@ -94,19 +95,45 @@ class NamedEntityRecognizer:
                 
     def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str):
         """ Find most common entity for each article """
-        def find_most_common_entity(article):
+        # TODO put a similarity threshold in here somewhere!
+        def find_most_common_entity(article_raw):
+            article = article_raw[nlp_doc_colname]
             if article is None:
                 return tuple()
-            all_items = [(x.text, x.label_) for x in article.ents]
-            items = [x.text for x in article.ents if entity_type in x.label_]
+            all_items = []
+            items = []
+            for x in article.ents:
+                text = x.text
+                url = x.label_.split(" ")[0]
+                dbpedia_labels = x.label_.split(" ")[1]
+                # TODO maybe use namedtuple here
+                all_items.append((text, url, dbpedia_labels))
+                
+                # TODO perhaps look for a more general solution here?
+                # Idea: find a good compromise between standard NER and DBPedia
+                # Washington case: Trust standard NER for washington GPE
+                if text.lower() == "washington":
+                    standard_ner_ents = {i.text.lower(): i.label_ for i in article_raw["nlp"].ents}
+                    if "washington" in [i.lower() for i in standard_ner_ents.keys()]:
+                        if standard_ner_ents["washington"] == "GPE":
+                            dbpedia_labels = "Location_State"
+
+                if entity_type in dbpedia_labels:
+                    # append last bit of url to make sure we don't get duplicates
+                    last_url_tag = url.rfind("/")
+                    entity_name = url[last_url_tag+1:].replace("_", " ")
+                    items.append(entity_name)
+
+            # items = [x.text for x in article.ents if entity_type in x.label_]
             most_common = Counter(items).most_common(1)
             if len(most_common) == 0:
                 return tuple()
             else:
                 return most_common[0]
+        
         # For some reason all the NLP resolved are None!!
         df[["most_common_1", "most_common_1_num"]] = pd.DataFrame.from_records(
-            df[nlp_doc_colname].apply(find_most_common_entity))
+            df.apply(lambda x: find_most_common_entity(x), axis=1))  # apply to each row
         df.dropna(inplace=True)     
         return df
 
@@ -193,7 +220,7 @@ if __name__ == "__main__":
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=100,
+        articles_per_period=500,
         max_length=300
     )
 
@@ -201,16 +228,59 @@ if __name__ == "__main__":
     # might be a lot faster if we merge all articles of a day into one document?
     # df = NER.load_preloaded()
 
+    # TODO extend coref vocabulary by "washington state"
+
+
     # TODO we can't keep saving all the preliminary stages in our data frame, we'll run out of ram
-    df_pp = NER.spacy_preprocessing(df, model_size="sm")
-    df_pp = NER.dbpedia_ner(df_pp, model_size="sm")
+    df_pp = NER.spacy_preprocessing(df, model_size="lg")
+    df_pp = NER.dbpedia_ner(df_pp, model_size="lg")
+    
+    # TODO - Misclassification debugging
+    # Check how come we get 'Washington' as a person this much!
+    # Functionality for checking a given entity
+    debug = False
+    if debug:
+        for i in range(df_pp.shape[0]):
+            if ("Washington" in df_pp.loc[i, :].nlp.text):
+                print(i)
+
+        # show entities of a given article
+        import requests
+        example = df_pp.loc[16, :]
+        print(example.nlp.text)
+        # standard NER
+        items = [(i.text, i.label_) for i in example.nlp.ents]
+        print(items)
+        print()
+        # dbpedia NER
+        dbpedia_items = [(i.text, i.label_, i.start, i.end) for i in example.nlp_resolved.ents]
+        print(dbpedia_items)
+
+        for i in dbpedia_items:
+            print(i)
+        # query dbpedia with example text
+
+        # check coref greedyness
+        nlp = spacy.load(f"en_core_web_sm")  # "eng_core_web_lg" for better but slower results
+        coref = neuralcoref.NeuralCoref(nlp.vocab, greedyness=0.4)
+        nlp.add_pipe(coref, name='neuralcoref')
+        res = nlp(example.nlp.text)
+        ungreedy_text = res._.coref_resolved
+        print(ungreedy_text)
+
+        # TODO the neuralcoref entities look better than the NER ones, can we use those?
+        base_url = "http://localhost:2222/rest"
+        response = requests.get(f"{base_url}/annotate",
+            headers={'accept': 'application/json'},
+            params={'text': "nursing home residents in one Washington state facility"})
+        data = response.json()
+        print(data)
+        for i in data.get("Resources"):
+            print(str(i)+"\n")
+        # look at result closely to make sure we pick right entity
+
     df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
-    
-    # TODO DBPedia should identify Trump and Donald Trum as same entity - we need to make sure we catch that
-    
-    # TODO seems like we are still not visualizing everything correctly!
     df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
-    # TODO this step doesn't give us a proper data frame
     df_most_common = NER.sum_period_most_common_entities(df_pp)
     df_most_common = NER.fill_entity_gaps(df_most_common)
     df_most_common = NER.cum_sum_df(df_most_common)
