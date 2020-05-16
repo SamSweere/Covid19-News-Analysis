@@ -215,12 +215,12 @@ if __name__ == "__main__":
         os.mkdir("experiments")
 
     print("Loading Data...\t", str(datetime.now()))
-    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=500,
+        articles_per_period=700,
         max_length=300
     )
 
@@ -228,8 +228,7 @@ if __name__ == "__main__":
     # might be a lot faster if we merge all articles of a day into one document?
     # df = NER.load_preloaded()
 
-    # TODO extend coref vocabulary by "washington state"
-
+    # TODO log each visualization in  anew folder and save specification
 
     # TODO we can't keep saving all the preliminary stages in our data frame, we'll run out of ram
     df_pp = NER.spacy_preprocessing(df, model_size="lg")
