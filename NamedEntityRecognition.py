@@ -235,6 +235,7 @@ if __name__ == "__main__":
     df_pp = NER.spacy_preprocessing(df, model_size="lg")
     df_pp = NER.dbpedia_ner(df_pp, model_size="lg")
     
+    # TODO make this a debugging function
     # TODO - Misclassification debugging
     # Check how come we get 'Washington' as a person this much!
     # Functionality for checking a given entity
