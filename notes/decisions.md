@@ -14,3 +14,4 @@ Set greedyness of neuralcoref to 4 after seeing that otherwise it tends to repla
 We see that descriptive references are resolved as real ones: "Donald Trump's aide xyz" will be seen as a mention of Donald Trum as well. (Example: Washingon state Gov. Jay Inslee is seen as one entity by neuralcoref, but as mulitple by NER and dbpedia). 
 We see that sometimes spacy NER has better results than DBPedia, in particular in cases of disambiguition.
 For now we manually exclude the Washington case bc it seems the only prominent disambiguition case that really interferes with finding Person entities.
+We find that a number of documents has double whitespaces. Often enough these are wrongly recognized as a token. We make sure to remove them in the early stages of the pipeline.

@@ -1,6 +1,9 @@
 Entry source: https://monkeylearn.com/text-analysis/
 Main library: spacy
 
+# Report Ideas
+https://towardsdatascience.com/text-ming-comments-of-a-plan-to-get-america-back-to-work-ba82a843ebe7
+
 # Pre-trained models
 https://github.com/facebookresearch/InferSent
 https://github.com/salesforce/cove
@@ -48,6 +51,7 @@ https://towardsdatascience.com/topic-modelling-in-python-with-nltk-and-gensim-4e
 https://github.com/FelixChop/MediumArticles/blob/master/LDA-BBC.ipynb
 https://cran.r-project.org/web/packages/LDAvis/vignettes/details.pdf
 DBpedia spotlight paper: http://jodaiber.de/doc/entity.pdf
+LDA high level explanation: https://www.youtube.com/watch?v=DWJYZq_fQ2A
 
 
 ## Classification
@@ -58,6 +62,10 @@ https://medium.com/@chrisfotache/text-classification-in-python-pipelines-nlp-nlt
 ## Named Entity Recognition
 https://towardsdatascience.com/named-entity-recognition-with-nltk-and-spacy-8c4a7d88e7da
 https://medium.com/sicara/train-ner-model-with-nltk-stanford-tagger-english-french-german-6d90573a9486
+
+# Entity Linking:
+- DBPedia Spotlight
+- we could try https://spacy.io/api/entitylinker as well, I guess
 
 ### Coreference Resolution
 https://medium.com/district-data-labs/basics-of-entity-resolution-with-python-and-dedupe-bc87440b64d4

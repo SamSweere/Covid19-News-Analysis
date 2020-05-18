@@ -103,6 +103,8 @@ class NamedEntityRecognizer:
             all_items = []
             items = []
             for x in article.ents:
+                if x.text.isspace():
+                    continue
                 text = x.text
                 url = x.label_.split(" ")[0]
                 dbpedia_labels = x.label_.split(" ")[1]
@@ -185,7 +187,7 @@ class NamedEntityRecognizer:
         # NER.show_problems(article)
 
         # we need to further resolve entities
-        item_labels = [(x.text, x.label_) for x in article.ents]
+        item_labels = [(x.text, x.label_) for x in article.ents if not x.text.isspace()]
         print(item_labels)
 
         if visualize:
