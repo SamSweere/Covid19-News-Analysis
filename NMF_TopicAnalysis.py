@@ -1,5 +1,4 @@
 import spacy
-from sklearn.feature_extraction.text import TfidVectorizer
 from sklearn.decomposition import NMF
 import read_data
 from datetime import datetime
@@ -10,6 +9,7 @@ import textacy.tm
 import re
 import string
 from nltk.corpus import stopwords
+import matplotlib.pyplot as plt
 
 
 # TODO should probably just inherit from model or something...
