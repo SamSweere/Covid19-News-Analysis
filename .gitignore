@@ -1,8 +1,11 @@
 # User added
 figures/
 tm_venv/
+tm_env/
 .vscode/
 models/
+neuralcoref/
+experiments/
 
 *.csv
 *.jsonl
