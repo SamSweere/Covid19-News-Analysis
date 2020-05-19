@@ -1,3 +1,5 @@
+import sys
+sys.path.append("src/")
 import spacy
 from sklearn.decomposition import NMF
 import read_data
@@ -16,9 +18,16 @@ import matplotlib.pyplot as plt
 class TopicAnalyser:
     def __init__(self):
         self.vectorizer = self.get_vectorizer()
-        self.model = self.get_nmf_model()
+        self.topic_model = self.get_nmf_model()
+        self.graphicspath = "src/figures/"
+        self.image_type = ".png"
 
-    def analyze(self):
+    def identify_topics(self):
+        """ Find topics in data """
+        pass
+
+    def label_data(self):
+        """ Label data with known topicy """
         pass
 
     def apply_nlp(self, df):
@@ -43,33 +52,38 @@ class TopicAnalyser:
         model = textacy.tm.TopicModel("nmf", n_topics=20)
         return model
 
-    def get_doc_term_matrix(self, df):
+    def get_doc_term_matrix(self, df, fit=False):
         print(f"Weighting formula: {self.vectorizer.weighting}")  # tfidf
-        # doc_term_matrix = vectorizer.fit_transform(corpus)
         docs = [i.doc.text for i in df["nlp"]]
         my_terms_list=[[tok  for tok in doc.split() if tok not in stopwords.words('english') ] for doc in docs]
+        if fit:
+            self.vectorizer.fit(my_terms_list)
         doc_term_matrix = self.vectorizer.fit_transform(my_terms_list)
         print("Some Terms:")
         print(self.vectorizer.terms_list[:10])
 
         return doc_term_matrix
 
-    def get_doc_topic_matrix(self, doc_term_matrix):
-        # TODO when should we fit this, when should we transform it?
-        self.model.fit(doc_term_matrix)
-        doc_topic_matrix = self.model.transform(doc_term_matrix)
+    def get_doc_topic_matrix(self, doc_term_matrix, fit=False):
+        if fit:
+            self.topic_model.fit(doc_term_matrix)
+        doc_topic_matrix = self.topic_model.transform(doc_term_matrix)
         print(f"Doc topic matrix shape: {doc_topic_matrix.shape}")
         return doc_topic_matrix
 
-    def visualize(self):
-        top_topic_terms = list(self.model.top_topic_terms(self.vectorizer.id_to_term))
-        print(top_topic_terms)
-        self.model.termite_plot(doc_term_matrix, self.vectorizer.id_to_term, topics=-1)
+    def visualize(self, title):
+        top_topic_terms = list(self.topic_model.top_topic_terms(self.vectorizer.id_to_term))
+        # TODO print some terms only
+        print("Some topics")
+        for i in range(5):
+            print(i, ":\t", top_topic_terms[i][1][:3])
+        self.topic_model.termite_plot(doc_term_matrix, self.vectorizer.id_to_term, topics=-1)
+        plt.savefig(self.graphicspath+title+self.image_type)
         plt.show()
         # TODO we should do this plydavis stuff here as well, it's pretty cool
 
     def print_topics(self):
-        for topic_idx, top_terms in self.model.top_topic_terms(
+        for topic_idx, top_terms in self.topic_model.top_topic_terms(
             self.vectorizer.id_to_term, topics=[0,1]):
         # print(topic_idx, top_terms)
             print("topic", topic_idx, ":", " ".join([str(i) for i in top_terms]))
@@ -114,29 +128,43 @@ if __name__ == "__main__":
     if not os.path.isdir("../experiments"):
         os.mkdir("../experiments")
 
-    print("Loading Data...\t", str(datetime.now()))
     start_date=datetime.strptime("2020-04-03", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
-    df = read_data.get_body_df(
+
+    # Pass with representative fitting data
+    # TODO 
+    # find and name topics
+    print("Loading Data...\t", str(datetime.now()))
+    representative_df = read_data.get_representative_df(
+        n_samples=10,
         start_date=start_date,
-        end_date=end_date,
-        articles_per_period=2,
-        max_length=300
+        end_date=end_date
     )
-
     ta = TopicAnalyser()
-    df = ta.apply_nlp(df)
-    doc_term_matrix = ta.get_doc_term_matrix(df)
-    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
-    ta.visualize()
+    representative_df = ta.apply_nlp(representative_df)
+    doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
+    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix, fit=True)
+    ta.visualize(title="Find Topics")
 
-    # TODO
-    # find automatic topic names for any given day
+    # Pass with specific data set
+    # TODO do some nicer prints
     # find topic distribution of a given day
     # convert to dataframe
     # save & run R script (maybe even via subprocess)
+    print("Loading Data...\t", str(datetime.now()))
+    df = read_data.get_body_df(
+        start_date=start_date,
+        end_date=end_date,
+        articles_per_period=200,
+        max_length=300
+    )
+    df = ta.apply_nlp(df)
+    doc_term_matrix = ta.get_doc_term_matrix(df)
+    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
+    ta.visualize(title="Apply Topics")
 
 
-
+    # TODO how can both images be exatly the same? makes no sense!
+    # look into visualize, I guess!
 
 
