@@ -1,5 +1,6 @@
 """ Named Entity Recognition """
 
+import sys
 import read_data
 from datetime import datetime, timedelta
 import spacy  # the spacy nets have been trained on OntoNotes 5.0
@@ -7,8 +8,6 @@ from spacy import displacy
 from collections import Counter
 import pandas as pd
 from itertools import chain
-from visualization import visualization
-from visualization import bar_chart_race
 import neuralcoref
 from datetime import datetime
 # import spacy_dbpedia_spotlight
@@ -16,8 +15,11 @@ import numpy as np
 from collections import namedtuple
 import os
 
+sys.path.append("src/visualization/")
+import visualization as viz
+import bar_chart_race
+
 # custom adaption of spacy_dbpedia_spotlight
-import sys
 sys.path.append("src/spacy_dbpedia_spotlight/")
 import entity_linker
 import initialize
@@ -96,7 +98,7 @@ class NamedEntityRecognizer:
 
     def visualize(self, df_most_common, start_date, end_date):
         print("Starting Visualization...\t", str(datetime.now()))
-        visualization.animate_NER(df_most_common)
+        viz.animate_NER(df_most_common)
         bar_chart_race.create_barchart_race(df_most_common, start_date, end_date)
                 
     def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str):
