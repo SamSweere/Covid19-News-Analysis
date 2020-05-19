@@ -16,7 +16,7 @@ from collections import namedtuple
 import os
 
 sys.path.append("src/visualization/")
-import visualization as viz
+import matplotlib_viz as viz
 import bar_chart_race
 
 # custom adaption of spacy_dbpedia_spotlight
