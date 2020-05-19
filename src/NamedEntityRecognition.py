@@ -222,7 +222,7 @@ if __name__ == "__main__":
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=700,
+        articles_per_period= 5, #700,
         max_length=300
     )
 
@@ -233,8 +233,9 @@ if __name__ == "__main__":
     # TODO log each visualization in  anew folder and save specification
 
     # TODO we can't keep saving all the preliminary stages in our data frame, we'll run out of ram
-    df_pp = NER.spacy_preprocessing(df, model_size="lg")
-    df_pp = NER.dbpedia_ner(df_pp, model_size="lg")
+    # TODO: changed the model size to sm
+    df_pp = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
+    df_pp = NER.dbpedia_ner(df_pp,model_size="sm") #model_size="lg")
     
     # TODO make this a debugging function
     # TODO - Misclassification debugging
