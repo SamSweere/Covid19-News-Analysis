@@ -14,7 +14,7 @@ def filter_articles(n_articles=None, source_name=None, start_date=None, end_date
     counter = 0
     articles_per_period_counter = 0
     current_period = None
-    with jsonlines.open("aylien-covid-news.jsonl") as f:
+    with jsonlines.open("../data/aylien-covid-news.jsonl") as f:
         for line in f:
             t = line["published_at"].split(" ")[0]
             d_o_p = datetime.strptime(t, "%Y-%m-%d")

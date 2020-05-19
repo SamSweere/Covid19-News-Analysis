@@ -7,8 +7,8 @@ from spacy import displacy
 from collections import Counter
 import pandas as pd
 from itertools import chain
-import visualization
-import bar_chart_race
+from visualization import visualization
+from visualization import bar_chart_race
 import neuralcoref
 from datetime import datetime
 import spacy_dbpedia_spotlight
@@ -213,8 +213,8 @@ class NamedEntityRecognizer:
 
 if __name__ == "__main__":
 
-    if not os.path.isdir("experiments"):
-        os.mkdir("experiments")
+    if not os.path.isdir("../experiments"):
+        os.mkdir("../experiments")
 
     print("Loading Data...\t", str(datetime.now()))
     start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")

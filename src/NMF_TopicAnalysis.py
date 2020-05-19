@@ -111,8 +111,8 @@ if __name__ == "__main__":
     # Following mostly this tutorial:
     # https://chartbeat-labs.github.io/textacy/build/html/api_reference/vsm_and_tm.html
 
-    if not os.path.isdir("experiments"):
-        os.mkdir("experiments")
+    if not os.path.isdir("../experiments"):
+        os.mkdir("../experiments")
 
     print("Loading Data...\t", str(datetime.now()))
     start_date=datetime.strptime("2020-04-03", "%Y-%m-%d")
