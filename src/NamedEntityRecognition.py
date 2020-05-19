@@ -11,12 +11,18 @@ from visualization import visualization
 from visualization import bar_chart_race
 import neuralcoref
 from datetime import datetime
-import spacy_dbpedia_spotlight
+# import spacy_dbpedia_spotlight
 import numpy as np
 from collections import namedtuple
 import os
 
+# custom adaption of spacy_dbpedia_spotlight
+import sys
+sys.path.append("src/spacy_dbpedia_spotlight/")
+import entity_linker
+import initialize
 
+# TODO I think we get an error bc we don't have the right dbpedia spotlight version?
 # currently we can process about 500 articles per minute
 
 
@@ -60,7 +66,7 @@ class NamedEntityRecognizer:
         assert model_size in ["sm", "lg"]
         nlp_pp = spacy.load(f"en_core_web_{model_size}", disable=["ner"])
         # TODO we might be throwing out a lot of stuff in entity_linker (spacy_dbpedia_spotlight), maybe go check?
-        spacy_dbpedia_spotlight.load('en', nlp_pp)
+        initialize.load('en', nlp_pp)
         print("Starting NLP Coref", str(datetime.now()))
         print("------------------------")   
         print("DBPedia NER pipeline:", nlp_pp.pipe_names)   
