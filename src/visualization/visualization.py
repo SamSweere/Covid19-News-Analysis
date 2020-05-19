@@ -32,9 +32,9 @@ def animate_NER(df_most_common):
     anim = FuncAnimation(fig, animate, repeat=True, blit=False, frames=n_frames-1, interval=800)
     
     # save as .gif # we sometimes get problems if we only have one data point
-    anim.save("figures/topic_trends.gif", writer='imagemagick', fps=1)
+    anim.save("src/figures/topic_trends.gif", writer='imagemagick', fps=1)
 
     # save as .mp4 for yt upload
     FFwriter = FFMpegWriter(fps=1, codec="libx265")     
-    anim.save('figures/topic_trends.mp4', writer=FFwriter)
+    anim.save('src/figures/topic_trends.mp4', writer=FFwriter)
 

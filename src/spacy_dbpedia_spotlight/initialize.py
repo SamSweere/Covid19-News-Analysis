@@ -3,7 +3,7 @@ from spacy.language import Language
 import entity_linker, utilz
 
 # __version__ = utilz.pkg_meta["version"]
-__version__ = "custom"
+__version__ = "custom"  # '0.1.3'
 
 Language.factories['overwrite_vectors'] = lambda nlp, **cfg: EntityLinker(nlp, **cfg)
 

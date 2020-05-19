@@ -219,16 +219,19 @@ class NamedEntityRecognizer:
 
 if __name__ == "__main__":
 
-    if not os.path.isdir("../experiments"):
-        os.mkdir("../experiments")
+    if not os.path.isdir("src/experiments"):
+        os.mkdir("src/experiments")
+
+    if not os.path.isdir("src/logs"):
+        os.mkdir("src/logs")
 
     print("Loading Data...\t", str(datetime.now()))
-    start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period= 5, #700,
+        articles_per_period=30, #700,
         max_length=300
     )
 
@@ -297,7 +300,7 @@ if __name__ == "__main__":
 
     # TODO we need to do everything in the right order!
 
-    df_most_common.to_csv("logs/df_most_common"+str(datetime.now())+".csv")
+    df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
     print(df_most_common)
     NER.visualize(df_most_common, start_date, end_date)
 
