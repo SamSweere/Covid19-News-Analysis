@@ -25,7 +25,7 @@ from gensim.models import Phrases
 import numpy as np
 from gensim import models
 from gensim import corpora
-
+from datetime import datetime
 
 """GOAL: Topic detection"""
 
@@ -96,5 +96,40 @@ def predict_topic(lda_model, dictionary_LDA, num_topics, document_list):
     })
     return topic_df
 
+
+
+if __name__ == "__main__":
+    # Inspiration https://github.com/FelixChop/MediumArticles/blob/master/LDA-BBC.ipynb
+    # TODO what is this Chandigarh stuff in body?
+
+    # TODO it might make sense to somehow pre-allocate the data well
+    ### Topic Analysis
+
+    # load data
+    start_date = datetime.strptime("2020-03-10", "%Y-%m-%d")
+    end_date = datetime.strptime("2020-04-20", "%Y-%m-%d")
+    df = read_data.get_body_df(
+        n_articles=1000, start_date=start_date, end_date=end_date)
+
+    df = preprocessing.preprocess(df)
+    n_gram_list = n_gram(df)
+    num_topics = 10
+
+    # LDA results
+    dictionary_LDA = build_dictionary(n_gram_list)
+    lda_model, corpus = lda(n_gram_list, dictionary_LDA, num_topics)
+    show_topics(lda_model, num_topics)  # show some intermediate results
+
+    # predict (TODO should we preprocess in same way as text?)
+    doc = read_data.get_body_df(15).body[10]
+    topic_df = predict_topic(lda_model, dictionary_LDA, num_topics, [doc])
+    print(topic_df)
+
+
+    # Visualize results
+    import pyLDAvis.gensim
+    lda_display3 = pyLDAvis.gensim.prepare(
+        lda_model, corpus, dictionary_LDA, sort_topics=False)
+    pyLDAvis.show(lda_display3)
 
 

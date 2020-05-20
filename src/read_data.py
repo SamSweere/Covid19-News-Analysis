@@ -10,6 +10,8 @@ def filter_articles(n_articles=None, source_name=None, start_date=None, end_date
     filter articles according to specifications
     our data seems to be sorted newest to oldest -> retrieving new data is much faster
     """
+    if not max_length:
+        max_length = np.inf
     date_of_publication = []
     articles = []
     counter = 0

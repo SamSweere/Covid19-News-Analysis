@@ -10,8 +10,11 @@ from textacy.vsm import Vectorizer
 import textacy.tm
 import re
 import string
+import numpy as np
 from nltk.corpus import stopwords
 import matplotlib.pyplot as plt
+import scipy
+import pandas as pd
 
 
 # TODO should probably just inherit from model or something...
@@ -49,18 +52,21 @@ class TopicAnalyser:
 
     def get_nmf_model(self):
         # TODO how can we get this to converge?
-        model = textacy.tm.TopicModel("nmf", n_topics=20)
+        model = textacy.tm.TopicModel("nmf", n_topics=10)
         return model
 
     def get_doc_term_matrix(self, df, fit=False):
-        print(f"Weighting formula: {self.vectorizer.weighting}")  # tfidf
+        """ 
+        Get doc_term_matrix for docs in df. feed docs as nested list; maintains order so we can just keep using our df
+        """
+        # print(f"Weighting formula: {self.vectorizer.weighting}")  # tfidf
         docs = [i.doc.text for i in df["nlp"]]
         my_terms_list=[[tok  for tok in doc.split() if tok not in stopwords.words('english') ] for doc in docs]
         if fit:
             self.vectorizer.fit(my_terms_list)
         doc_term_matrix = self.vectorizer.fit_transform(my_terms_list)
-        print("Some Terms:")
-        print(self.vectorizer.terms_list[:10])
+        # print("Some Terms:")
+        # print(self.vectorizer.terms_list[:10])
 
         return doc_term_matrix
 
@@ -71,16 +77,20 @@ class TopicAnalyser:
         print(f"Doc topic matrix shape: {doc_topic_matrix.shape}")
         return doc_topic_matrix
 
-    def visualize(self, title):
-        top_topic_terms = list(self.topic_model.top_topic_terms(self.vectorizer.id_to_term))
-        # TODO print some terms only
-        print("Some topics")
-        for i in range(5):
-            print(i, ":\t", top_topic_terms[i][1][:3])
+    def visualize(self, title, doc_term_matrix):
+        """ 
+        I think this just shows how much strongly each word is a part of each topic, 
+        irrespective of the doc_term_matrix 
+        """
+        # # print some fitted terms
+        # top_topic_terms = list(self.topic_model.top_topic_terms(self.vectorizer.id_to_term))
+        # print("Some topics")
+        # for i in range(5):
+        #     print(i, ":\t", top_topic_terms[i][1][:3])        
         self.topic_model.termite_plot(doc_term_matrix, self.vectorizer.id_to_term, topics=-1)
+        plt.title(title)
         plt.savefig(self.graphicspath+title+self.image_type)
-        plt.show()
-        # TODO we should do this plydavis stuff here as well, it's pretty cool
+        # plt.show()
 
     def print_topics(self):
         for topic_idx, top_terms in self.topic_model.top_topic_terms(
@@ -95,21 +105,44 @@ class TopicAnalyser:
         text = re.sub(r'\[.*?\]', '', text)
         text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
         text = re.sub(r'\w*\d\w*', '', text)
+        # TODO should we replace hyphons?
+        # test = re.sub(r"\-", "")
         text = re.sub(r"\ +", ' ', text)
         return text
 
-    # Just in case we want to remove certain types of token
-    def remove_tokens_on_match(self, doc):
-        indexes = []
-        for index, token in enumerate(doc):
-            # TODO we don't really need to filter for PUNCT, bc we already do regex
-            if (token.pos_  in ('PUNCT', "SPACE")):
-                indexes.append(index)
-        np_array = doc.to_array([LOWER, POS, ENT_TYPE, IS_ALPHA])
-        np_array = numpy.delete(np_array, indexes, axis = 0)
-        doc2 = Doc(doc.vocab, words=[t.text for i, t in enumerate(doc) if i not in indexes])
-        doc2.from_array([LOWER, POS, ENT_TYPE, IS_ALPHA], np_array)
-        return doc2
+    def get_top_n_topics(self, df, doc_topic_matrix, top_n=3):
+        # create topic name mapping
+        topic_names = {}
+        for idx, names in self.topic_model.top_topic_terms(self.vectorizer.id_to_term, topics=-1):
+            topic_names[idx] = ("_".join(names[0:3]))
+
+        all_topics = []
+        for doc_idx, topics in self.topic_model.top_doc_topics(doc_topic_matrix, docs=-1, top_n=top_n):
+            # print([:35], ":", topics)
+            topics = (df.loc[doc_idx, "publication_date"],) + topics
+            all_topics.append(topics)
+        columns = ["publication_date"]
+
+        # TODO take first 3 words as topic name
+        # we should use them to replace the numbers!
+
+        for i in range(len(all_topics[0])-1):
+            columns += [f"topic_{i}"]
+        topic_df = pd.DataFrame(all_topics, columns=columns)
+        return topic_df, topic_names
+
+    # # Just in case we want to remove certain types of token
+    # def remove_tokens_on_match(self, doc):
+    #     indexes = []
+    #     for index, token in enumerate(doc):
+    #         # TODO we don't really need to filter for PUNCT, bc we already do regex
+    #         if (token.pos_  in ('PUNCT', "SPACE")):
+    #             indexes.append(index)
+    #     np_array = doc.to_array([LOWER, POS, ENT_TYPE, IS_ALPHA])
+    #     np_array = numpy.delete(np_array, indexes, axis = 0)
+    #     doc2 = Doc(doc.vocab, words=[t.text for i, t in enumerate(doc) if i not in indexes])
+    #     doc2.from_array([LOWER, POS, ENT_TYPE, IS_ALPHA], np_array)
+    #     return doc2
 
 
 if __name__ == "__main__":
@@ -128,11 +161,10 @@ if __name__ == "__main__":
     if not os.path.isdir("../experiments"):
         os.mkdir("../experiments")
 
-    start_date=datetime.strptime("2020-04-03", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-03-25", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
 
     # Pass with representative fitting data
-    # TODO 
     # find and name topics
     print("Loading Data...\t", str(datetime.now()))
     representative_df = read_data.get_representative_df(
@@ -142,9 +174,19 @@ if __name__ == "__main__":
     )
     ta = TopicAnalyser()
     representative_df = ta.apply_nlp(representative_df)
-    doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
-    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix, fit=True)
-    ta.visualize(title="Find Topics")
+    rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
+
+    ## debug
+    # TODO pring some stuff from rep_doc_term_matrix
+    # for topic_idx, top_terms in ta.topic_model.top_topic_terms(
+    #     ta.vectorizer.id_to_term, topics=[0,1]):
+    #       print('topic', topic_idx, ':', '   '.join(top_terms))
+
+    a = scipy.sparse.csr_matrix.toarray(rep_doc_term_matrix)
+    ## debug
+
+    rep_doc_topic_matrix = ta.get_doc_topic_matrix(rep_doc_term_matrix, fit=True)
+    ta.visualize("Find Topics", rep_doc_term_matrix)
 
     # Pass with specific data set
     # TODO do some nicer prints
@@ -161,10 +203,23 @@ if __name__ == "__main__":
     df = ta.apply_nlp(df)
     doc_term_matrix = ta.get_doc_term_matrix(df)
     doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
-    ta.visualize(title="Apply Topics")
 
+    all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
 
-    # TODO how can both images be exatly the same? makes no sense!
-    # look into visualize, I guess!
+    # TODO make class function
+    # TODO automatically name the topics!
+    # transform topics
+    all_topics = all_topics.loc[:, ["publication_date", "topic_0"]]
+    df_gb = all_topics.groupby(by=["publication_date", "topic_0"])
+    res = (pd.DataFrame(df_gb["topic_0"].
+        apply(sum)).
+        rename({"topic_0": "sum"}, axis=1).
+        reset_index().
+        rename({"topic_0": "main_topic"}, axis=1))
+    # set nicer topic names
+    res["main_topic"] = res["main_topic"].replace(topic_names)
+    res.to_csv("src/topic_frequency.csv", index=False)
 
+    # TODO ideally, call R from subprocess
+    
 

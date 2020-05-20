@@ -100,7 +100,7 @@ class NamedEntityRecognizer:
 
     def visualize(self, df_most_common, start_date, end_date):
         print("Starting Visualization...\t", str(datetime.now()))
-        viz.animate_NER(df_most_common)
+        # viz.animate_NER(df_most_common)
         bar_chart_race.create_barchart_race(df_most_common, start_date, end_date)
                 
     def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str):
