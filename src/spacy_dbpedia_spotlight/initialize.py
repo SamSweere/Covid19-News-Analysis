@@ -1,5 +1,6 @@
 from spacy.language import Language
 
+
 import entity_linker, utilz
 
 # __version__ = utilz.pkg_meta["version"]

@@ -18,13 +18,13 @@ from collections import namedtuple
 import os
 
 sys.path.append("src/visualization/")
-import matplotlib_viz as viz
-import bar_chart_race
+import visualization.matplotlib_viz as viz
+import visualization.bar_chart_race as bar_chart_race
 
 # custom adaption of spacy_dbpedia_spotlight
 sys.path.append("src/spacy_dbpedia_spotlight/")
-import entity_linker
-import initialize
+from spacy_dbpedia_spotlight import entity_linker 
+from spacy_dbpedia_spotlight import initialize
 
 # TODO I think we get an error bc we don't have the right dbpedia spotlight version?
 # currently we can process about 500 articles per minute
@@ -241,6 +241,9 @@ if __name__ == "__main__":
         articles_per_period=30, #700,
         max_length=300
     )
+
+    print(df.to_string())
+    
 
     NER = NamedEntityRecognizer()
     # might be a lot faster if we merge all articles of a day into one document?
