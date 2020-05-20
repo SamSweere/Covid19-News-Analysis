@@ -3,13 +3,15 @@
 import sys
 import read_data
 from datetime import datetime, timedelta
-import spacy  # the spacy nets have been trained on OntoNotes 5.0
+import spacy  # the spacy nets have been trained on OntoNotes 5.0spacy.prefer_gpu()
+spacy.prefer_gpu()
 from spacy import displacy
 from collections import Counter
 import pandas as pd
 from itertools import chain
 import neuralcoref
 from datetime import datetime
+import time
 # import spacy_dbpedia_spotlight
 import numpy as np
 from collections import namedtuple
@@ -228,6 +230,9 @@ if __name__ == "__main__":
         os.mkdir("src/logs")
 
     print("Loading Data...\t", str(datetime.now()))
+    start_time = time.process_time()
+    
+
     start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
     df = read_data.get_body_df(
@@ -300,10 +305,15 @@ if __name__ == "__main__":
     df_most_common = NER.cum_sum_df(df_most_common)
     df_most_common = NER.select_most_common_per_period(df_most_common)
 
+
+
     # TODO we need to do everything in the right order!
 
     df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
     print(df_most_common)
     NER.visualize(df_most_common, start_date, end_date)
+
+    elapsed_time = time.process_time() - start_time
+    print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
 
     pass
