@@ -28,6 +28,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
+# Save it on the right cluster location
+os.chdir("/hpcwork/hl669674/")
 
 class Instructor:
     def __init__(self, opt):
