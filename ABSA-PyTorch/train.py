@@ -288,7 +288,7 @@ def main():
     logger.addHandler(logging.FileHandler(log_file))
 
     # Save it on the right cluster location
-    os.chdir("/hpcwork/hl669674/")
+    # os.chdir("/hpcwork/hl669674/")
 
     ins = Instructor(opt)
     ins.run()
