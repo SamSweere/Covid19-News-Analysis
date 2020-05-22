@@ -3,9 +3,10 @@
 tm_venv/
 tm_env/
 .vscode/
-models/
+/models/
 neuralcoref/
 experiments/
+state_dict/
 
 *.csv
 *.jsonl
