@@ -86,6 +86,9 @@ https://github.com/sebastianruder/NLP-progress/blob/master/english/sentiment_ana
 https://github.com/HSLCY/ABSA-BERT-pair
 
 
+
+https://github.com/songyouwei/ABSA-PyTorch
+
 https://github.com/AlexYangLi/ABSA_Keras
 
 ## Text Extraction

@@ -4,7 +4,7 @@ import sys
 import read_data
 from datetime import datetime, timedelta
 import spacy  # the spacy nets have been trained on OntoNotes 5.0spacy.prefer_gpu()
-spacy.prefer_gpu()
+# spacy.prefer_gpu()
 from spacy import displacy
 from collections import Counter
 import pandas as pd
@@ -25,6 +25,8 @@ import visualization.bar_chart_race as bar_chart_race
 sys.path.append("src/spacy_dbpedia_spotlight/")
 from spacy_dbpedia_spotlight import entity_linker 
 from spacy_dbpedia_spotlight import initialize
+
+from sentiment import target_based_sentiment
 
 # TODO I think we get an error bc we don't have the right dbpedia spotlight version?
 # currently we can process about 500 articles per minute
@@ -187,7 +189,7 @@ class NamedEntityRecognizer:
     def show_problems(self, article, visualize=False):
         """ 
         show some of our current problems in sentiment analyses 
-        @param article: result of spacy nlp applied to the body of an article
+        @param artprint(tsa.get_sentiment("asdf","asdf"))icle: result of spacy nlp applied to the body of an article
         """
 
         # run as:
@@ -242,12 +244,15 @@ if __name__ == "__main__":
         max_length=300
     )
 
-    print(df.to_string())
+    # print(df.to_string())
     
 
     NER = NamedEntityRecognizer()
     # might be a lot faster if we merge all articles of a day into one document?
     # df = NER.load_preloaded()
+
+    # Create a target based sentiment class
+    # TSA = target_based_sentiment.TargetSentimentAnalyzer() 
 
     # TODO log each visualization in  anew folder and save specification
 
@@ -301,20 +306,23 @@ if __name__ == "__main__":
             print(str(i)+"\n")
         # look at result closely to make sure we pick right entity
 
-    df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
-    df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
-    df_most_common = NER.sum_period_most_common_entities(df_pp)
-    df_most_common = NER.fill_entity_gaps(df_most_common)
-    df_most_common = NER.cum_sum_df(df_most_common)
-    df_most_common = NER.select_most_common_per_period(df_most_common)
+
+    print(df_pp)
+
+    # df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+    # df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
+    # df_most_common = NER.sum_period_most_common_entities(df_pp)
+    # df_most_common = NER.fill_entity_gaps(df_most_common)
+    # df_most_common = NER.cum_sum_df(df_most_common)
+    # df_most_common = NER.select_most_common_per_period(df_most_common)
 
 
 
-    # TODO we need to do everything in the right order!
+    # # TODO we need to do everything in the right order!
 
-    df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
-    print(df_most_common)
-    NER.visualize(df_most_common, start_date, end_date)
+    # df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
+    # print(df_most_common)
+    # NER.visualize(df_most_common, start_date, end_date)
 
     elapsed_time = time.process_time() - start_time
     print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# file: infer_example_bert_models.py
+# Adapted from:
 # author: songyouwei <youwei0314@gmail.com>
 # fixed: yangheng <yangheng@m.scnu.edu.cn>
 # Copyright (C) 2018. All Rights Reserved.
@@ -7,13 +7,12 @@
 import numpy as np
 import torch
 import torch.nn.functional as F
-from models.lcf_bert import LCF_BERT
-from models.aen import AEN_BERT
-from models.bert_spc import BERT_SPC
-from pytorch_transformers import BertModel
-from data_utils import Tokenizer4Bert
-import argparse
 
+
+from .models.lcf_bert import LCF_BERT
+from pytorch_transformers import BertModel
+from .data_utils import Tokenizer4Bert
+import argparse
 
 def pad_and_truncate(sequence, maxlen, dtype='int64', padding='post', truncating='post', value=0):
     x = (np.ones(maxlen) * value).astype(dtype)
@@ -45,7 +44,6 @@ def prepare_data(text_left, aspect, text_right, tokenizer):
 
     return text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices
 
-
 def get_parameters():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='lcf_bert', type=str)
@@ -76,59 +74,67 @@ def get_parameters():
     opt = parser.parse_args()
     return opt
 
+class TargetSentimentAnalyzer:
+    def __init__(self):
+        model_classes = {
+            # 'bert_spc': BERT_SPC,
+            # 'aen_bert': AEN_BERT,
+            'lcf_bert': LCF_BERT
+        }
 
-if __name__ == '__main__':
+        # set your trained models here
+        state_dict_paths = {
+            'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7283',
+            # 'bert_spc': 'state_dict/bert_spc_laptop_val_acc0.268',
+            # 'aen_bert': 'state_dict/aen_bert_laptop_val_acc0.2006'
+        }
 
-    model_classes = {
-        # 'bert_spc': BERT_SPC,
-        # 'aen_bert': AEN_BERT,
-        'lcf_bert': LCF_BERT
-    }
-    # set your trained models here
-    state_dict_paths = {
-        'lcf_bert': 'state_dict/lcf_bert_twitter_val_acc0.7283',
-        # 'bert_spc': 'state_dict/bert_spc_laptop_val_acc0.268',
-        # 'aen_bert': 'state_dict/aen_bert_laptop_val_acc0.2006'
-    }
+        self.opt = get_parameters()
+        self.opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    opt = get_parameters()
-    opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print("TargetSentimentAnalyzer using device:",self.opt.device)
 
-    tokenizer = Tokenizer4Bert(opt.max_seq_len, opt.pretrained_bert_name)
-    bert = BertModel.from_pretrained(opt.pretrained_bert_name)
-    model = model_classes[opt.model_name](bert, opt).to(opt.device)
+        self.tokenizer = Tokenizer4Bert(self.opt.max_seq_len, self.opt.pretrained_bert_name)
+        self.bert = BertModel.from_pretrained(self.opt.pretrained_bert_name)
+        self.model = model_classes[self.opt.model_name](self.bert, self.opt).to(self.opt.device)
+
+
+        print('loading model {0} ...'.format(self.opt.model_name))
+        self.model.load_state_dict(torch.load(state_dict_paths[self.opt.model_name]))
+        self.model.eval()
+        torch.autograd.set_grad_enabled(False)
+
+    def get_sentiment(self, sentence, target):
+        if(len(sentence) > self.opt.max_seq_len):
+            print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Returning 0 sentiment. " +
+             "Sencence: " + sentence)
+            return 0
+
+        # TODO: we work from first occurence if there is more than one target
+
+        location = sentence.find(target) # Find gets the first occurence of a substring
+        left = sentence[:location]
+        right = sentence[location + len(target):]
+        
+
+        text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices = \
+        prepare_data(left, target, right, self.tokenizer)
     
-    print('loading model {0} ...'.format(opt.model_name))
-    model.load_state_dict(torch.load(state_dict_paths[opt.model_name]))
-    model.eval()
-    torch.autograd.set_grad_enabled(False)
+        text_bert_indices = torch.tensor([text_bert_indices], dtype=torch.int64).to(self.opt.device)
+        bert_segments_ids = torch.tensor([bert_segments_ids], dtype=torch.int64).to(self.opt.device)
+        text_raw_bert_indices = torch.tensor([text_raw_bert_indices], dtype=torch.int64).to(self.opt.device)
+        aspect_bert_indices = torch.tensor([aspect_bert_indices], dtype=torch.int64).to(self.opt.device)
+        if 'lcf' in self.opt.model_name:
+            inputs = [text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices]
+        # elif 'aen' in self.opt.model_name:
+        #     inputs = [text_raw_bert_indices, aspect_bert_indices]
+        # elif 'spc' in self.opt.model_name:
+        #     inputs = [text_bert_indices, bert_segments_ids]
+        outputs = self.model(inputs)
+        t_probs = F.softmax(outputs, dim=-1).cpu().numpy()
+        # print('t_probs = ', t_probs)
+        sentiment = t_probs.argmax(axis=-1) - 1
+        # print('aspect sentiment = ', sentiment)
 
-    # input: This little place has a cute interior decor and affordable city prices.
-    # text_left = This little place has a cute 
-    # aspect = interior decor
-    # text_right = and affordable city prices.
+        return sentiment[0]
     
-    # text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices = \
-    #     prepare_data('This little place has a cute', 'interior decor', 'and affordable city prices.', tokenizer)
-
-
-    text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices = \
-        prepare_data('The tall guy', 'Philip Frederics', 'was the best.', tokenizer)
-
-    
-    
-    text_bert_indices = torch.tensor([text_bert_indices], dtype=torch.int64).to(opt.device)
-    bert_segments_ids = torch.tensor([bert_segments_ids], dtype=torch.int64).to(opt.device)
-    text_raw_bert_indices = torch.tensor([text_raw_bert_indices], dtype=torch.int64).to(opt.device)
-    aspect_bert_indices = torch.tensor([aspect_bert_indices], dtype=torch.int64).to(opt.device)
-    if 'lcf' in opt.model_name:
-        inputs = [text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices]
-    elif 'aen' in opt.model_name:
-        inputs = [text_raw_bert_indices, aspect_bert_indices]
-    elif 'spc' in opt.model_name:
-        inputs = [text_bert_indices, bert_segments_ids]
-    outputs = model(inputs)
-    t_probs = F.softmax(outputs, dim=-1).cpu().numpy()
-    print('t_probs = ', t_probs)
-    print('aspect sentiment = ', t_probs.argmax(axis=-1) - 1)
-
