@@ -28,8 +28,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
-# Save it on the right cluster location
-os.chdir("/hpcwork/hl669674/")
+
 
 class Instructor:
     def __init__(self, opt):
@@ -287,6 +286,9 @@ def main():
 
     log_file = '{}-{}-{}.log'.format(opt.model_name, opt.dataset, strftime("%y%m%d-%H%M", localtime()))
     logger.addHandler(logging.FileHandler(log_file))
+
+    # Save it on the right cluster location
+    os.chdir("/hpcwork/hl669674/")
 
     ins = Instructor(opt)
     ins.run()
