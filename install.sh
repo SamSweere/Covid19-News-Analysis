@@ -14,6 +14,10 @@ pip3 uninstall spacy
 pip3 install spacy==2.2.4
 python3 -m spacy download en_core_web_sm
 
+# for gpu use use you might have to isntall:
+# pip install cupy-cuda102
+
+
 # Other dependencies
 
 pip3 install -r extra_requirements.txt
