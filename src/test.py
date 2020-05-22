@@ -31,6 +31,6 @@ elapsed_time = time.process_time() - start_time
 print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
 
 
-print(df_pp.iloc[0]["nlp"]._.coref_clusters)
-print(df_pp.iloc[0]["nlp"]._.coref_resolved)
-# print(df_pp)
+# print(df_pp.iloc[0]["nlp"]._.coref_clusters)
+# print(df_pp.iloc[0]["nlp"]._.coref_resolved)
+print(df_pp.iloc[0]["nlp"])

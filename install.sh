@@ -19,5 +19,6 @@ python3 -m spacy download en_core_web_sm
 pip3 install -r extra_requirements.txt
 
 # Run the pd_pedia docker
+# docker run -itd --restart unless-stopped -p 2222:80 dbpedia/spotlight-english spotlight.sh
 
 # Make sure to set the environment to the tm_env environment

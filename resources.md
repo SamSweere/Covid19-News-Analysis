@@ -66,6 +66,7 @@ https://medium.com/sicara/train-ner-model-with-nltk-stanford-tagger-english-fren
 # Entity Linking:
 - DBPedia Spotlight
 - we could try https://spacy.io/api/entitylinker as well, I guess
+docker run -itd --restart unless-stopped -p 2222:80 dbpedia/spotlight-english spotlight.sh
 
 ### Coreference Resolution
 https://medium.com/district-data-labs/basics-of-entity-resolution-with-python-and-dedupe-bc87440b64d4
@@ -78,6 +79,14 @@ https://arxiv.org/pdf/1910.11470.pdf
 
 ## Sentiment Analysis
 http://nlp.town/blog/off-the-shelf-sentiment-analysis/
+
+
+## Target based sentiment analysis
+https://github.com/sebastianruder/NLP-progress/blob/master/english/sentiment_analysis.md
+https://github.com/HSLCY/ABSA-BERT-pair
+
+
+https://github.com/AlexYangLi/ABSA_Keras
 
 ## Text Extraction
 Regex
