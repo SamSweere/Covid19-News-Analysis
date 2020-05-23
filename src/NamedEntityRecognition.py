@@ -1,7 +1,6 @@
 """ Named Entity Recognition """
 
 import sys
-import read_data
 from datetime import datetime, timedelta
 import spacy  # the spacy nets have been trained on OntoNotes 5.0spacy.prefer_gpu()
 # spacy.prefer_gpu()
@@ -15,7 +14,12 @@ import time
 # import spacy_dbpedia_spotlight
 import numpy as np
 from collections import namedtuple
+from copy import deepcopy
 import os
+import requests
+
+sys.path.append("src/")
+import read_data
 
 sys.path.append("src/visualization/")
 import visualization.matplotlib_viz as viz
@@ -26,10 +30,7 @@ sys.path.append("src/spacy_dbpedia_spotlight/")
 from spacy_dbpedia_spotlight import entity_linker 
 from spacy_dbpedia_spotlight import initialize
 
-from sentiment import target_based_sentiment
-
-# TODO I think we get an error bc we don't have the right dbpedia spotlight version?
-# currently we can process about 500 articles per minute
+# from sentiment import target_based_sentiment
 
 
 class NamedEntityRecognizer:
@@ -110,10 +111,14 @@ class NamedEntityRecognizer:
         # TODO put a similarity threshold in here somewhere!
         def find_most_common_entity(article_raw):
             article = article_raw[nlp_doc_colname]
+            article_length = len(article.text)
             if article is None:
                 return tuple()
-            all_items = []
-            items = []
+            
+            all_items = []  # mostly for debugging
+            entity_counts = {}
+            replacement_candidate = np.zeros(len(article.text)) -1
+
             for x in article.ents:
                 if x.text.isspace():
                     continue
@@ -136,20 +141,59 @@ class NamedEntityRecognizer:
                     # append last bit of url to make sure we don't get duplicates
                     last_url_tag = url.rfind("/")
                     entity_name = url[last_url_tag+1:].replace("_", " ")
-                    items.append(entity_name)
+                    if entity_name in entity_counts.keys():
+                        entity_counts[entity_name] += 1
+                    else:
+                        entity_counts[entity_name] = 1
+                    # set replacement candidate to index of corresponding entity in dict
+                    ent_index = list(entity_counts).index(entity_name)
+                    surface_form_start = article[x.start].idx
+                    if x.end >= len(article):
+                        surface_form_end = article_length
+                    else:
+                        surface_form_end = article[x.end].idx
+                    np.put(replacement_candidate, range(surface_form_start, surface_form_end), ent_index)
+            
+            if len(entity_counts) == 0:
+                return tuple()
+
+            # TODO replace all mentions of that entity with its entity_name
 
             # items = [x.text for x in article.ents if entity_type in x.label_]
-            most_common = Counter(items).most_common(1)
-            if len(most_common) == 0:
-                return tuple()
-            else:
-                return most_common[0]
-        
-        # For some reason all the NLP resolved are None!!
-        df[["most_common_1", "most_common_1_num"]] = pd.DataFrame.from_records(
+            # return the entity with max count and resolved text
+            mce = max(entity_counts)
+            mce_val = entity_counts[mce]
+            mce_idx = list(entity_counts).index(mce)
+
+            in_a_row = False
+            end = None
+            start = None
+            doc_len = article_length
+            ner_resolved = list(deepcopy(article.text))
+            for index, rep_idx in enumerate(replacement_candidate[::-1]):
+                if (rep_idx != mce_idx) and (not in_a_row):
+                    continue
+                elif (rep_idx == mce_idx) and (not in_a_row):  # we have a mention of our enity
+                    # we found start of surface form
+                    in_a_row = True
+                    end = doc_len - index
+                    start = doc_len - index - 1
+                elif (rep_idx == mce_idx) and in_a_row:
+                    # we are still in surface form
+                    start -= 1
+                elif (rep_idx != mce_idx) and (in_a_row):
+                    ner_resolved = ner_resolved[:start] + list(mce) + ner_resolved[end:]
+                    start = None
+                    end = None
+                    # we found end of surface form, replace
+                                        
+            return (mce, mce_val, "".join(ner_resolved))
+
+        df[["most_common_1", "most_common_1_num", "ner_resolved"]] = pd.DataFrame.from_records(
             df.apply(lambda x: find_most_common_entity(x), axis=1))  # apply to each row
         df.dropna(inplace=True)     
         return df
+
 
     def fill_entity_gaps(self, df_most_common):
         """
@@ -222,6 +266,47 @@ class NamedEntityRecognizer:
         df.sort_values(by=["publication_date", "cum_sum"], ascending=False, inplace=True)
         return df
 
+    def debug(self, df_pp):
+        # Functionality for checking a given entity
+        print(df_pp)
+        for i in range(df_pp.shape[0]):
+            if ("Washington" in df_pp.loc[i, :].nlp.text):
+                print(i)
+
+            # show entities of a given article
+            example = df_pp.loc[16, :]
+            print(example.nlp.text)
+            # standard NER
+            items = [(i.text, i.label_) for i in example.nlp.ents]
+            print(items)
+            print()
+            # dbpedia NER
+            dbpedia_items = [(i.text, i.label_, i.start, i.end) for i in example.nlp_resolved.ents]
+            print(dbpedia_items)
+
+            for i in dbpedia_items:
+                print(i)
+            # query dbpedia with example text
+
+            # check coref greedyness
+            nlp = spacy.load(f"en_core_web_sm")  # "eng_core_web_lg" for better but slower results
+            coref = neuralcoref.NeuralCoref(nlp.vocab, greedyness=0.4)
+            nlp.add_pipe(coref, name='neuralcoref')
+            res = nlp(example.nlp.text)
+            ungreedy_text = res._.coref_resolved
+            print(ungreedy_text)
+
+            # TODO the neuralcoref entities look better than the NER ones, can we use those?
+            base_url = "http://localhost:2222/rest"
+            response = requests.get(f"{base_url}/annotate",
+                headers={'accept': 'application/json'},
+                params={'text': "nursing home residents in one Washington state facility"})
+            data = response.json()
+            print(data)
+            for i in data.get("Resources"):
+                print(str(i)+"\n")
+            # look at result closely to make sure we pick right entity
+
 
 if __name__ == "__main__":
 
@@ -240,7 +325,7 @@ if __name__ == "__main__":
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=30, #700,
+        articles_per_period=10, #700,
         max_length=300
     )
 
@@ -261,70 +346,22 @@ if __name__ == "__main__":
     df_pp = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
     df_pp = NER.dbpedia_ner(df_pp,model_size="sm") #model_size="lg")
     
-    # TODO make this a debugging function
-    # TODO - Misclassification debugging
-    # Check how come we get 'Washington' as a person this much!
-    # Functionality for checking a given entity
-    debug = False
-    if debug:
-        for i in range(df_pp.shape[0]):
-            if ("Washington" in df_pp.loc[i, :].nlp.text):
-                print(i)
+    df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+    
+    # TODO check ner_resolved
+    print(df_pp.head())
 
-        # show entities of a given article
-        import requests
-        example = df_pp.loc[16, :]
-        print(example.nlp.text)
-        # standard NER
-        items = [(i.text, i.label_) for i in example.nlp.ents]
-        print(items)
-        print()
-        # dbpedia NER
-        dbpedia_items = [(i.text, i.label_, i.start, i.end) for i in example.nlp_resolved.ents]
-        print(dbpedia_items)
-
-        for i in dbpedia_items:
-            print(i)
-        # query dbpedia with example text
-
-        # check coref greedyness
-        nlp = spacy.load(f"en_core_web_sm")  # "eng_core_web_lg" for better but slower results
-        coref = neuralcoref.NeuralCoref(nlp.vocab, greedyness=0.4)
-        nlp.add_pipe(coref, name='neuralcoref')
-        res = nlp(example.nlp.text)
-        ungreedy_text = res._.coref_resolved
-        print(ungreedy_text)
-
-        # TODO the neuralcoref entities look better than the NER ones, can we use those?
-        base_url = "http://localhost:2222/rest"
-        response = requests.get(f"{base_url}/annotate",
-            headers={'accept': 'application/json'},
-            params={'text': "nursing home residents in one Washington state facility"})
-        data = response.json()
-        print(data)
-        for i in data.get("Resources"):
-            print(str(i)+"\n")
-        # look at result closely to make sure we pick right entity
-
-
-    print(df_pp)
-
-    # df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
     # df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
     # df_most_common = NER.sum_period_most_common_entities(df_pp)
     # df_most_common = NER.fill_entity_gaps(df_most_common)
     # df_most_common = NER.cum_sum_df(df_most_common)
     # df_most_common = NER.select_most_common_per_period(df_most_common)
 
-
-
-    # # TODO we need to do everything in the right order!
-
     # df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
     # print(df_most_common)
     # NER.visualize(df_most_common, start_date, end_date)
 
-    elapsed_time = time.process_time() - start_time
-    print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
+    # elapsed_time = time.process_time() - start_time
+    # print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
 
     pass
