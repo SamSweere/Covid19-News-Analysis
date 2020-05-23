@@ -52,8 +52,9 @@ class NamedEntityRecognizer:
         print(nlp.pipe_names)
         print("------------------------")
         # df["nlp"] = [i for i in nlp.pipe(df["body"], batch_size=10, n_threads=6)]  # didn't really speed up anything
-        df["nlp"] = df["body"].apply(nlp)
-        return df
+        res = pd.DataFrame(df["body"].apply(nlp))
+        res.columns = ["nlp"]
+        return res
 
     def spacy_ner(self, df, model_size):
         """ Use spacy CNN NER """
@@ -80,9 +81,10 @@ class NamedEntityRecognizer:
         print("------------------------")
         def inner(x):
             return nlp_pp(x)
-        df["nlp_resolved"] = df["nlp"].apply(lambda x: inner(x._.coref_resolved))
+        res = pd.DataFrame(df["nlp"].apply(lambda x: inner(x._.coref_resolved)))
+        res.columns = ["nlp_resolved"]
         print("Completed NLP by...\t", str(datetime.now()))
-        return df
+        return res
 
     def sum_period_most_common_entities(self, df):
         """ 
@@ -162,6 +164,7 @@ class NamedEntityRecognizer:
             # items = [x.text for x in article.ents if entity_type in x.label_]
             # return the entity with max count and resolved text
             mce = max(entity_counts)
+            mce_list = list(mce)
             mce_val = entity_counts[mce]
             mce_idx = list(entity_counts).index(mce)
 
@@ -169,6 +172,7 @@ class NamedEntityRecognizer:
             end = None
             start = None
             doc_len = article_length
+            # TODO this list stuff isn't very efficient, could prolly be improved using pre-allocated arrays
             ner_resolved = list(deepcopy(article.text))
             for index, rep_idx in enumerate(replacement_candidate[::-1]):
                 if (rep_idx != mce_idx) and (not in_a_row):
@@ -176,22 +180,25 @@ class NamedEntityRecognizer:
                 elif (rep_idx == mce_idx) and (not in_a_row):  # we have a mention of our enity
                     # we found start of surface form
                     in_a_row = True
-                    end = doc_len - index
+                    end = doc_len - index - 1
                     start = doc_len - index - 1
                 elif (rep_idx == mce_idx) and in_a_row:
                     # we are still in surface form
                     start -= 1
                 elif (rep_idx != mce_idx) and (in_a_row):
-                    ner_resolved = ner_resolved[:start] + list(mce) + ner_resolved[end:]
+                    # we found end of surface form, replace
+                    ner_resolved = ner_resolved[:start] + mce_list + ner_resolved[end:]
                     start = None
                     end = None
-                    # we found end of surface form, replace
-                                        
+                    in_a_row = False
+
+            # ner_resolved = ""                       
             return (mce, mce_val, "".join(ner_resolved))
 
         df[["most_common_1", "most_common_1_num", "ner_resolved"]] = pd.DataFrame.from_records(
             df.apply(lambda x: find_most_common_entity(x), axis=1))  # apply to each row
-        df.dropna(inplace=True)     
+        df.dropna(inplace=True)
+        df.reset_index(drop=True, inplace=True)    
         return df
 
 
@@ -344,8 +351,9 @@ if __name__ == "__main__":
     # TODO we can't keep saving all the preliminary stages in our data frame, we'll run out of ram
     # TODO: changed the model size to sm
     df_pp = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
-    df_pp = NER.dbpedia_ner(df_pp,model_size="sm") #model_size="lg")
+    df_pp = NER.dbpedia_ner(df_pp, model_size="sm") #model_size="lg")
     
+    del df
     df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
     
     # TODO check ner_resolved
