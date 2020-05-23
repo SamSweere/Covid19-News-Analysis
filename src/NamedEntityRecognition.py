@@ -81,10 +81,9 @@ class NamedEntityRecognizer:
         print("------------------------")
         def inner(x):
             return nlp_pp(x)
-        res = pd.DataFrame(df["nlp"].apply(lambda x: inner(x._.coref_resolved)))
-        res.columns = ["nlp_resolved"]
+        df["nlp_resolved"] = df["nlp"].apply(lambda x: inner(x._.coref_resolved))
         print("Completed NLP by...\t", str(datetime.now()))
-        return res
+        return df
 
     def sum_period_most_common_entities(self, df):
         """ 
