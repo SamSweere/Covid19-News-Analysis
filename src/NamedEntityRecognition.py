@@ -30,7 +30,7 @@ sys.path.append("src/spacy_dbpedia_spotlight/")
 from spacy_dbpedia_spotlight import entity_linker 
 from spacy_dbpedia_spotlight import initialize
 
-# from sentiment import target_based_sentiment
+from sentiment import target_based_sentiment
 
 
 class NamedEntityRecognizer:
@@ -236,6 +236,40 @@ class NamedEntityRecognizer:
         most_common = Counter(items).most_common(1)
         return most_common[0][0]  # get only the phrase for now
 
+    def get_target_sentiments(self, df_pp, model_size):
+        assert model_size in ["sm", "lg"]
+        nlp_nr = spacy.load(f"en_core_web_{model_size}")
+        df_pp["sents"] = df_pp["ner_resolved"].apply(lambda x: list(nlp_nr(x, disable=["tokenizer","tagger","entity","ner"]).sents))
+
+        # Load target based sentiment
+        tsa = target_based_sentiment.TargetSentimentAnalyzer()  
+
+        def get_average_sentiment(sentences, target):
+            print(sentences)
+            print(target)
+            print()
+            sentiment_sum = 0
+            count = 0
+
+            for sentence in sentences:
+                sentiment = tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
+
+                if(sentiment is None):
+                    # Nothing found in this sentence
+                    continue
+                else:
+                    sentiment_sum += sentiment
+                    count += 1
+
+            if(count != 0):
+                return sentiment_sum/count
+            else:
+                return 0
+
+        # Get the average sentiment for each target
+        df_pp["sentiment"] = df_pp.apply(lambda x: get_average_sentiment(x["sents"], x["most_common_1"]), axis=1)
+        return df_pp
+
     def show_problems(self, article, visualize=False):
         """ 
         show some of our current problems in sentiment analyses 
@@ -271,6 +305,8 @@ class NamedEntityRecognizer:
         df["cum_sum"] = df_gb["most_common_1_num"].apply(pd.Series.cumsum)
         df.sort_values(by=["publication_date", "cum_sum"], ascending=False, inplace=True)
         return df
+
+
 
     def debug(self, df_pp):
         # Functionality for checking a given entity
@@ -326,7 +362,7 @@ if __name__ == "__main__":
     start_time = time.process_time()
     
 
-    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
     df = read_data.get_body_df(
         start_date=start_date,
@@ -355,6 +391,8 @@ if __name__ == "__main__":
     del df
     df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
     
+    df_pp = NER.get_target_sentiments(df_pp, model_size="sm")
+
     # TODO check ner_resolved
     print(df_pp.head())
 

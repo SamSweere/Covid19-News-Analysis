@@ -19,31 +19,76 @@ df = pd.DataFrame({
 NER = NamedEntityRecognizer()
 
 df_pp = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
-df_pp = NER.dbpedia_ner(df_pp,model_size="sm") #model_size="lg")
+df_pp = NER.dbpedia_ner(df_pp, model_size="sm") #model_size="lg")
 
 
-# df_pp = NER.dbpedia_ner(df_pp,model_size="sm") #model_size="lg")
+del df
+df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+    
 
-# df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
-# df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
-# df_most_common = NER.sum_period_most_common_entities(df_pp)
-# df_most_common = NER.fill_entity_gaps(df_most_common)
-# df_most_common = NER.cum_sum_df(df_most_common)
-# df_most_common = NER.select_most_common_per_period(df_most_common)
 
-# df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")
+
+# print(df_pp.iloc[1]["nlp"]._.coref_clusters)
+# print(df_pp.iloc[1]["nlp"]._.coref_resolved)
+# print(df_pp.iloc[0]["nlp"])
+
+# print(df_pp.iloc[1]["nlp_resolved"])
+# print(df_pp.iloc[1]['annotate_dbpedia_spotlight'])
+
+nlp_nr = spacy.load("en_core_web_sm")
+# doc = nlp("text goes here", tokenizer = False, parser=False, tagger=False, entity=False)
+
+
+
+# print(list(df_pp.iloc[0]["ner_resolved"].sents))
+
+df_pp["sents"] = df_pp["ner_resolved"].apply(lambda x: list(nlp_nr(x, disable=["tokenizer","tagger","entity","ner"]).sents))
+
+
+print(df_pp.head())
+# print(df_pp.iloc[0]["sents"])
+# print(df_pp.iloc[0]["sents"][0])
+# print(df_pp.iloc[0]["most_common_1"])
+
+
+
+tsa = target_based_sentiment.TargetSentimentAnalyzer()  
+
+
+def get_average_sentiment(sentences, target):
+    print(sentences)
+    print(target)
+    print()
+    sentiment_sum = 0
+    count = 0
+
+    for sentence in sentences:
+        sentiment = tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
+
+        if(sentiment is None):
+            # Nothing found in this sentence
+            continue
+        else:
+            sentiment_sum += sentiment
+            count += 1
+
+    if(count != 0):
+        return sentiment_sum/count
+    else:
+        return 0
+
+
+# df_pp["most_common_1"]
+# df_pp["ner_resolved"]
+
+# df
+
+df_pp["sentiment"] = df_pp.apply(lambda x: get_average_sentiment(x["sents"], x["most_common_1"]), axis=1)
+
+print(df_pp.head())
+
+
+# print(tsa.get_sentiment("The tall guy Philip Frederics is the worst.","Philip Frederics"))
 
 elapsed_time = time.process_time() - start_time
 print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
-
-
-print(df_pp.iloc[1]["nlp"]._.coref_clusters)
-print(df_pp.iloc[1]["nlp"]._.coref_resolved)
-# print(df_pp.iloc[0]["nlp"])
-
-print(df_pp.iloc[1]["nlp_resolved"])
-# print(df_pp.iloc[1]['annotate_dbpedia_spotlight'])
-
-# tsa = target_based_sentiment.TargetSentimentAnalyzer()  
-
-# print(tsa.get_sentiment("The tall guy Philip Frederics is the worst.","Philip Frederics"))

@@ -60,7 +60,7 @@ def get_parameters():
     parser.add_argument('--hidden_dim', default=300, type=int)
     parser.add_argument('--bert_dim', default=768, type=int)
     parser.add_argument('--pretrained_bert_name', default='bert-base-uncased', type=str)
-    parser.add_argument('--max_seq_len', default=80, type=int)
+    parser.add_argument('--max_seq_len', default=500, type=int)
     parser.add_argument('--polarities_dim', default=3, type=int)
     parser.add_argument('--hops', default=3, type=int)
     parser.add_argument('--device', default=None, type=str, help='e.g. cuda:0')
@@ -106,13 +106,18 @@ class TargetSentimentAnalyzer:
 
     def get_sentiment(self, sentence, target):
         if(len(sentence) > self.opt.max_seq_len):
-            print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Returning 0 sentiment. " +
+            print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Returning None. " +
              "Sencence: " + sentence)
-            return 0
+            return None
 
         # TODO: we work from first occurence if there is more than one target
 
         location = sentence.find(target) # Find gets the first occurence of a substring
+        if(location == -1):
+            # No occurences, return None
+            return None
+
+
         left = sentence[:location]
         right = sentence[location + len(target):]
         
