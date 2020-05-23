@@ -84,7 +84,7 @@ class TargetSentimentAnalyzer:
 
         # set your trained models here
         state_dict_paths = {
-            'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7283',
+            'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7225',
             # 'bert_spc': 'state_dict/bert_spc_laptop_val_acc0.268',
             # 'aen_bert': 'state_dict/aen_bert_laptop_val_acc0.2006'
         }
