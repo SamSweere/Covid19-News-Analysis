@@ -15,3 +15,13 @@ We see that descriptive references are resolved as real ones: "Donald Trump's ai
 We see that sometimes spacy NER has better results than DBPedia, in particular in cases of disambiguition.
 For now we manually exclude the Washington case bc it seems the only prominent disambiguition case that really interferes with finding Person entities.
 We find that a number of documents has double whitespaces. Often enough these are wrongly recognized as a token. We make sure to remove them in the early stages of the pipeline.
+
+We find Pierre Trudeau a lot, probably a mistake!
+
+
+TopicAnalysis:
+A lot of pre-cleaning necessary, since we look at all token, not just entities. We find different apostrophes and the like.
+We find that NMF gives us topics that have a lot less overlap than those found by LAD.
+We need to get rid of newlines and all kinds of punctuation
+
+Seems like our text has some form of non-standard encoding, like typographic quotes and such.

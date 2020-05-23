@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from copy import deepcopy
 import numpy as np
+np.random.seed(0)
 
 
 def filter_articles(n_articles=None, source_name=None, start_date=None, end_date=None, articles_per_period=None, max_length=None):

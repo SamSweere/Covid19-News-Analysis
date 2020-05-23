@@ -17,7 +17,7 @@ pp <- streamgraph(
   width="1000px"
 ) %>%
   sg_legend(show=TRUE, label="Topics: ") %>%
-  sg_axis_x(1, "day", "%d-%m-%Y")
+  sg_axis_x(1, "day", "%d-%m")
   
 pp
 

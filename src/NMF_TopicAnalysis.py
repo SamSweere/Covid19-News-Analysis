@@ -15,6 +15,7 @@ from nltk.corpus import stopwords
 import matplotlib.pyplot as plt
 import scipy
 import pandas as pd
+np.random.seed(0)
 
 
 # TODO should probably just inherit from model or something...
@@ -61,13 +62,17 @@ class TopicAnalyser:
         """
         # print(f"Weighting formula: {self.vectorizer.weighting}")  # tfidf
         # TODO get all the lemmas instead of the text here!
-        for i in df["nlp"]:
-            sent = []
-            for j in i:
-                
-        docs = [j.lemma for i in df["nlp"] for j in i]
-        docs = [i.doc.text for i in df["nlp"]]
-        my_terms_list=[[tok for tok in doc.split() if tok not in stopwords.words('english') ] for doc in docs]
+        # for i in df["nlp"]:
+        #     sent = []
+        #     for j in i:
+        #         sent.append(j.lemma_)
+        #     docs.append
+
+        # docs = [j.lemma for i in df["nlp"] for j in i]
+        # docs = [i.doc.text for i in df["nlp"]]
+        print("Getting Doc-Term Matrix...\t", str(datetime.now()))
+        my_terms_list=[[tok.lemma_ for tok in doc if tok.lemma_ not in (stopwords.words('english') + ["-PRON-"])] 
+            for doc in df["nlp"]]
         if fit:
             self.vectorizer.fit(my_terms_list)
         doc_term_matrix = self.vectorizer.fit_transform(my_terms_list)
@@ -77,10 +82,11 @@ class TopicAnalyser:
         return doc_term_matrix
 
     def get_doc_topic_matrix(self, doc_term_matrix, fit=False):
+        print("Getting Doc-Topic Matrix...\t", str(datetime.now()))
         if fit:
             self.topic_model.fit(doc_term_matrix)
         doc_topic_matrix = self.topic_model.transform(doc_term_matrix)
-        print(f"Doc topic matrix shape: {doc_topic_matrix.shape}")
+        print(f"Doc-Topic matrix shape: {doc_topic_matrix.shape}")
         return doc_topic_matrix
 
     def visualize(self, title, doc_term_matrix):
@@ -111,13 +117,23 @@ class TopicAnalyser:
         text = re.sub(r'\[.*?\]', '', text)
         text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
         text = re.sub(r'\w*\d\w*', '', text)
+        text = re.sub(r'\n', '', text)
         # TODO should we replace hyphons?
         # test = re.sub(r"\-", "")
+        # TODO write a better regex for this stuff
+        text = text.replace("’s", "")
+        text = text.replace("’", "")
+        text = text.replace('"', "")
+        text = text.replace("”", "")
+        text = text.replace("“", "")
+        # text = text.replace("'s", "")
+        # text = text.replace("'", "")
         text = re.sub(r"\ +", ' ', text)
         return text
 
     def get_top_n_topics(self, df, doc_topic_matrix, top_n=3):
         # create topic name mapping
+        print("Getting Top N topics...\t", str(datetime.now()))
         topic_names = {}
         for idx, names in self.topic_model.top_topic_terms(self.vectorizer.id_to_term, topics=-1):
             topic_names[idx] = ("_".join(names[0:3]))
@@ -175,13 +191,13 @@ if __name__ == "__main__":
     if not os.path.isdir("../experiments"):
         os.mkdir("../experiments")
 
-    start_date=datetime.strptime("2020-04-02", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
+    start_date = datetime.strptime("2020-03-15", "%Y-%m-%d")
+    end_date = datetime.strptime("2020-04-06", "%Y-%m-%d")
 
     # Pass with representative fitting data to find and name topics
     print("Loading Data...\t", str(datetime.now()))
     representative_df = read_data.get_representative_df(
-        n_samples=10,
+        n_samples=200,
         start_date=start_date,
         end_date=end_date
     )
@@ -192,17 +208,17 @@ if __name__ == "__main__":
     ta.visualize("Find Topics", rep_doc_term_matrix)
 
     # Pass with specific data set
-    # TODO do some nicer prints
     print("Loading Data...\t", str(datetime.now()))
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=20,
-        max_length=100
+        articles_per_period=300, #700,
+        max_length=300
     )
     df = ta.apply_nlp(df)
     doc_term_matrix = ta.get_doc_term_matrix(df)
     doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
     all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
     topics_per_day = ta.get_topics_per_day(all_topics)
+    print(topics_per_day)
 
