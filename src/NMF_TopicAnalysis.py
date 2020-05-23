@@ -60,8 +60,14 @@ class TopicAnalyser:
         Get doc_term_matrix for docs in df. feed docs as nested list; maintains order so we can just keep using our df
         """
         # print(f"Weighting formula: {self.vectorizer.weighting}")  # tfidf
+        # TODO get all the lemmas instead of the text here!
+        for i in df["nlp"]:
+            sent = []
+            for j in i:
+                
+        docs = [j.lemma for i in df["nlp"] for j in i]
         docs = [i.doc.text for i in df["nlp"]]
-        my_terms_list=[[tok  for tok in doc.split() if tok not in stopwords.words('english') ] for doc in docs]
+        my_terms_list=[[tok for tok in doc.split() if tok not in stopwords.words('english') ] for doc in docs]
         if fit:
             self.vectorizer.fit(my_terms_list)
         doc_term_matrix = self.vectorizer.fit_transform(my_terms_list)
@@ -131,6 +137,19 @@ class TopicAnalyser:
         topic_df = pd.DataFrame(all_topics, columns=columns)
         return topic_df, topic_names
 
+    def get_topics_per_day(self, all_topics):
+        all_topics = all_topics.loc[:, ["publication_date", "topic_0"]]
+        df_gb = all_topics.groupby(by=["publication_date", "topic_0"])
+        res = (pd.DataFrame(df_gb["topic_0"].
+            apply(sum)).
+            rename({"topic_0": "sum"}, axis=1).
+            reset_index().
+            rename({"topic_0": "main_topic"}, axis=1))
+        # set nicer topic names
+        res["main_topic"] = res["main_topic"].replace(topic_names)
+        res.to_csv("src/topic_frequency.csv", index=False)
+        return res
+
     # # Just in case we want to remove certain types of token
     # def remove_tokens_on_match(self, doc):
     #     indexes = []
@@ -146,11 +165,6 @@ class TopicAnalyser:
 
 
 if __name__ == "__main__":
-    # TODO design choice: use either textacy, or use sklearn implementation
-
-    # TODO we can use spacy preprocessing for a count matrix
-    # and run RfidfTransformer instead of Vectorizer?
-
     # TODO instead of our manual preprocessing, we might be able to just take some spacy property
     # a = ([tok.lemma_ for tok in spacy_doc] for spacy_doc in df.nlp)
     # corpus = textacy.Corpus(nlp, data=docs)
@@ -161,11 +175,10 @@ if __name__ == "__main__":
     if not os.path.isdir("../experiments"):
         os.mkdir("../experiments")
 
-    start_date=datetime.strptime("2020-03-25", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-04-02", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
 
-    # Pass with representative fitting data
-    # find and name topics
+    # Pass with representative fitting data to find and name topics
     print("Loading Data...\t", str(datetime.now()))
     representative_df = read_data.get_representative_df(
         n_samples=10,
@@ -175,51 +188,21 @@ if __name__ == "__main__":
     ta = TopicAnalyser()
     representative_df = ta.apply_nlp(representative_df)
     rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
-
-    ## debug
-    # TODO pring some stuff from rep_doc_term_matrix
-    # for topic_idx, top_terms in ta.topic_model.top_topic_terms(
-    #     ta.vectorizer.id_to_term, topics=[0,1]):
-    #       print('topic', topic_idx, ':', '   '.join(top_terms))
-
-    a = scipy.sparse.csr_matrix.toarray(rep_doc_term_matrix)
-    ## debug
-
     rep_doc_topic_matrix = ta.get_doc_topic_matrix(rep_doc_term_matrix, fit=True)
     ta.visualize("Find Topics", rep_doc_term_matrix)
 
     # Pass with specific data set
     # TODO do some nicer prints
-    # find topic distribution of a given day
-    # convert to dataframe
-    # save & run R script (maybe even via subprocess)
     print("Loading Data...\t", str(datetime.now()))
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=200,
-        max_length=300
+        articles_per_period=20,
+        max_length=100
     )
     df = ta.apply_nlp(df)
     doc_term_matrix = ta.get_doc_term_matrix(df)
     doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
-
     all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
-
-    # TODO make class function
-    # TODO automatically name the topics!
-    # transform topics
-    all_topics = all_topics.loc[:, ["publication_date", "topic_0"]]
-    df_gb = all_topics.groupby(by=["publication_date", "topic_0"])
-    res = (pd.DataFrame(df_gb["topic_0"].
-        apply(sum)).
-        rename({"topic_0": "sum"}, axis=1).
-        reset_index().
-        rename({"topic_0": "main_topic"}, axis=1))
-    # set nicer topic names
-    res["main_topic"] = res["main_topic"].replace(topic_names)
-    res.to_csv("src/topic_frequency.csv", index=False)
-
-    # TODO ideally, call R from subprocess
-    
+    topics_per_day = ta.get_topics_per_day(all_topics)
 
