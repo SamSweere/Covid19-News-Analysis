@@ -81,9 +81,10 @@ class NamedEntityRecognizer:
         print("------------------------")
         def inner(x):
             return nlp_pp(x)
-        df["nlp_resolved"] = df["nlp"].apply(lambda x: inner(x._.coref_resolved))
+        res = pd.DataFrame(df["nlp"].apply(lambda x: inner(x._.coref_resolved)))
+        res.columns = ["nlp_resolved"]
         print("Completed NLP by...\t", str(datetime.now()))
-        return df
+        return res
 
     def sum_period_most_common_entities(self, df):
         """ 
@@ -153,6 +154,9 @@ class NamedEntityRecognizer:
                         surface_form_end = article_length
                     else:
                         surface_form_end = article[x.end].idx
+                        # in case there is whitespace before next token, subtract
+                        if article.text[article[x.end].idx-1] == " ":
+                            surface_form_end -= 1
                     np.put(replacement_candidate, range(surface_form_start, surface_form_end), ent_index)
             
             if len(entity_counts) == 0:
@@ -181,17 +185,19 @@ class NamedEntityRecognizer:
                     in_a_row = True
                     end = doc_len - index
                     start = doc_len - index - 1
-                elif (rep_idx == mce_idx) and in_a_row:
-                    # we are still in surface form
-                    start -= 1
                 elif ((rep_idx != mce_idx) or (index==doc_len-1)) and (in_a_row):
                     # we found end of surface form, replace
+                    if (index==doc_len-1):
+                        start -= 1
                     ner_resolved = ner_resolved[:start] + mce_list + ner_resolved[end:]
                     start = None
                     end = None
                     in_a_row = False
+                elif (rep_idx == mce_idx) and in_a_row:
+                    # we are still in surface form
+                    start -= 1
 
-            # ner_resolved = ""                       
+            # ner_resolved = ""    
             return (mce, mce_val, "".join(ner_resolved))
 
         df[["most_common_1", "most_common_1_num", "ner_resolved"]] = pd.DataFrame.from_records(
@@ -372,7 +378,8 @@ if __name__ == "__main__":
     )
 
     # print(df.to_string())
-    
+    df = df.loc[0, :]
+    df.body = pd.Series("Deepika loves Deepika.")
 
     NER = NamedEntityRecognizer()
     # might be a lot faster if we merge all articles of a day into one document?
