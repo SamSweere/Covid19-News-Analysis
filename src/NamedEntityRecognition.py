@@ -180,12 +180,12 @@ class NamedEntityRecognizer:
                 elif (rep_idx == mce_idx) and (not in_a_row):  # we have a mention of our enity
                     # we found start of surface form
                     in_a_row = True
-                    end = doc_len - index - 1
+                    end = doc_len - index
                     start = doc_len - index - 1
                 elif (rep_idx == mce_idx) and in_a_row:
                     # we are still in surface form
                     start -= 1
-                elif (rep_idx != mce_idx) and (in_a_row):
+                elif ((rep_idx != mce_idx) or (index==doc_len-1)) and (in_a_row):
                     # we found end of surface form, replace
                     ner_resolved = ner_resolved[:start] + mce_list + ner_resolved[end:]
                     start = None
