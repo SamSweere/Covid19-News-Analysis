@@ -1,4 +1,4 @@
-350#!/usr/local_rwth/bin/zsh
+#!/usr/local_rwth/bin/zsh
 
 #SBATCH --job-name=train_lcf_bert
 #SBATCH --output=cluster_logs/absa_%J.txt
