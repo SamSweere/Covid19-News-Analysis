@@ -378,15 +378,12 @@ if __name__ == "__main__":
     )
 
     # print(df.to_string())
-    df = df.loc[0, :]
-    df.body = pd.Series("Deepika loves Deepika.")
+    # df = df.loc[0, :]
+    # df.body = pd.Series("Deepika loves Deepika.")
 
     NER = NamedEntityRecognizer()
     # might be a lot faster if we merge all articles of a day into one document?
     # df = NER.load_preloaded()
-
-    # Create a target based sentiment class
-    # TSA = target_based_sentiment.TargetSentimentAnalyzer() 
 
     # TODO log each visualization in  anew folder and save specification
 
@@ -413,7 +410,7 @@ if __name__ == "__main__":
     # print(df_most_common)
     # NER.visualize(df_most_common, start_date, end_date)
 
-    # elapsed_time = time.process_time() - start_time
-    # print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
+    elapsed_time = time.process_time() - start_time
+    print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
 
     pass
