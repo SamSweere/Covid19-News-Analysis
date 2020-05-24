@@ -52,9 +52,11 @@ class NamedEntityRecognizer:
         print(nlp.pipe_names)
         print("------------------------")
         # df["nlp"] = [i for i in nlp.pipe(df["body"], batch_size=10, n_threads=6)]  # didn't really speed up anything
-        res = pd.DataFrame(df["body"].apply(nlp))
-        res.columns = ["nlp"]
-        return res
+        # res = pd.DataFrame(df["body"].apply(nlp))
+        # res.columns = ["nlp"]
+
+        df["nlp"] = df["body"].apply(nlp)
+        return df
 
     def spacy_ner(self, df, model_size):
         """ Use spacy CNN NER """
@@ -81,10 +83,13 @@ class NamedEntityRecognizer:
         print("------------------------")
         def inner(x):
             return nlp_pp(x)
-        res = pd.DataFrame(df["nlp"].apply(lambda x: inner(x._.coref_resolved)))
-        res.columns = ["nlp_resolved"]
+
+        df["nlp_resolved"] = df["nlp"].apply(lambda x: inner(x._.coref_resolved))
+        # res = pd.DataFrame(df["nlp"].apply(lambda x: inner(x._.coref_resolved)))
+        # res.columns = ["nlp_resolved"]
+        # res.append(df[])
         print("Completed NLP by...\t", str(datetime.now()))
-        return res
+        return df
 
     def sum_period_most_common_entities(self, df):
         """ 
@@ -101,6 +106,15 @@ class NamedEntityRecognizer:
         df_most_common = df_most_common.sort_values(by=["publication_date", "cum_sum"], ascending=False).reset_index()
         df_most_common = df_most_common.groupby(by=["publication_date"])
         df_most_common = df_most_common.head(10)
+        return df_most_common
+
+    def make_label(self, df_most_common):
+        def combine_sum_and_sent(cum_sum, sentiment):
+            s = cum_sum + " " + sentiment
+            return s
+
+        df_most_common["label"] = df_most_common.apply(lambda x: combine_sum_and_sent(x["cum_sum"], x["sentiment"]), axis=1)
+
         return df_most_common
 
     def visualize(self, df_most_common, start_date, end_date):
@@ -128,13 +142,13 @@ class NamedEntityRecognizer:
                 url = x.label_.split(" ")[0]
                 dbpedia_labels = x.label_.split(" ")[1]
                 # TODO maybe use namedtuple here
-                all_items.append((text, url, dbpedia_labels))
+                all_items.append((text, url, dbpedia_labels)) 
                 
                 # TODO perhaps look for a more general solution here?
                 # Idea: find a good compromise between standard NER and DBPedia
                 # Washington case: Trust standard NER for washington GPE
                 if text.lower() == "washington":
-                    standard_ner_ents = {i.text.lower(): i.label_ for i in article_raw["nlp"].ents}
+                    standard_ner_ents = {i.text.lower(): i.label_ for i in article_raw["nlp_resolved"].ents}
                     if "washington" in [i.lower() for i in standard_ner_ents.keys()]:
                         if standard_ner_ents["washington"] == "GPE":
                             dbpedia_labels = "Location_State"
@@ -165,7 +179,7 @@ class NamedEntityRecognizer:
             # TODO replace all mentions of that entity with its entity_name
 
             # items = [x.text for x in article.ents if entity_type in x.label_]
-            # return the entity with max count and resolved text
+            # return the entity with max ctimedelta(days=1)ount and resolved text
             mce = max(entity_counts)
             mce_list = list(mce)
             mce_val = entity_counts[mce]
@@ -212,7 +226,7 @@ class NamedEntityRecognizer:
         make sure we keep an absent but known entity around
         to avoid the bar from disappearing in bar chart race 
         """
-        assert set(df_most_common.columns) == set(['publication_date', 'most_common_1', 'most_common_1_num'])
+        assert set(df_most_common.columns) == set(['publication_date', 'most_common_1', 'most_common_1_num', 'sentiment'])
 
         # identify missing values
         all_entities = set(df_most_common["most_common_1"].unique())
@@ -230,6 +244,7 @@ class NamedEntityRecognizer:
 
         # add missing rows and sort again
         df_missing = pd.DataFrame(rows_to_add, columns=df_most_common.columns)
+        print(df_missing.head())
         df_most_common = pd.concat((df_most_common, df_missing), axis=0).reset_index()
         df_most_common.sort_values(by=["publication_date", "most_common_1"], inplace=True)
 
@@ -251,9 +266,6 @@ class NamedEntityRecognizer:
         tsa = target_based_sentiment.TargetSentimentAnalyzer()  
 
         def get_average_sentiment(sentences, target):
-            print(sentences)
-            print(target)
-            print()
             sentiment_sum = 0
             count = 0
 
@@ -355,6 +367,73 @@ class NamedEntityRecognizer:
                 print(str(i)+"\n")
             # look at result closely to make sure we pick right entity
 
+def run_and_save(start_date, end_date, articles_per_period = None, max_length = None):
+    c_date = start_date
+
+    # Name 
+    run_name = "s_" + start_date.strftime("%d_%m_%Y") + "_e_" + end_date.strftime("%d_%m_%Y") + "_app_" + str(articles_per_period) + "_ml_" + str(max_length)
+
+    folder_path = "data/"+run_name
+    if not os.path.isdir(folder_path):
+        os.mkdir(folder_path)
+    else:
+        print(folder_path)
+        print("Already exists, stopping")
+        return
+
+    print("Start run from date: " + start_date.strftime("%d_%m_%Y") + " to date: " + end_date.strftime("%d_%m_%Y"))
+    print("Articles per period: " + str(articles_per_period))
+    print("Max Length per article: " + str(max_length))
+
+    start_time = time.process_time()
+
+    NER = NamedEntityRecognizer()
+
+    # Increase until we hit the last day
+    while(c_date != end_date):
+        print("Running day:",c_date.strftime("%d_%m_%Y"))
+        print("Loading Data...\t", str(datetime.now()))
+        df = read_data.get_body_df(
+            start_date=c_date,
+            end_date=c_date,
+            articles_per_period=articles_per_period, #700,
+            max_length=max_length
+        )
+
+        df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
+
+        df = df.drop(columns=["body"]) # Drop some columns to make some space
+
+        df = NER.dbpedia_ner(df, model_size="sm") #model_size="lg")
+        # Cleanup df_pp by removing nlp
+        df = df.drop(columns=["nlp"])
+
+        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+
+        df = NER.get_target_sentiments(df, model_size="sm")
+
+        # TODO check ner_resolved
+        # print(df_pp.head())
+
+        df = df[["publication_date", "most_common_1", "most_common_1_num", "sentiment"]]
+        df_most_common = NER.sum_period_most_common_entities(df)
+
+        file_name = c_date.strftime("%d_%m_%Y")
+        df_most_common.to_csv(folder_path + "/" + file_name +".csv")
+
+
+
+
+        # Increase the day
+        c_date += timedelta(days=1)
+    
+    print("Long run finished")
+    elapsed_time = time.process_time() - start_time
+    print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
+    
+    
+
+
 
 if __name__ == "__main__":
 
@@ -364,11 +443,16 @@ if __name__ == "__main__":
     if not os.path.isdir("src/logs"):
         os.mkdir("src/logs")
 
+    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
+    end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
+    run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 1000)
+
+    """
     print("Loading Data...\t", str(datetime.now()))
     start_time = time.process_time()
     
 
-    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
     df = read_data.get_body_df(
         start_date=start_date,
@@ -389,28 +473,38 @@ if __name__ == "__main__":
 
     # TODO we can't keep saving all the preliminary stages in our data frame, we'll run out of ram
     # TODO: changed the model size to sm
-    df_pp = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
-    df_pp = NER.dbpedia_ner(df_pp, model_size="sm") #model_size="lg")
-    
-    del df
-    df_pp = NER.find_most_common_entities(df_pp, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
-    
-    df_pp = NER.get_target_sentiments(df_pp, model_size="sm")
+    df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
+
+    df = df.drop(columns=["body"]) # Drop some columns to make some space
+
+    df = NER.dbpedia_ner(df, model_size="sm") #model_size="lg")
+    # Cleanup df_pp by removing nlp
+    df = df.drop(columns=["nlp"])
+
+    df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+
+    df = NER.get_target_sentiments(df, model_size="sm")
 
     # TODO check ner_resolved
-    print(df_pp.head())
+    # print(df_pp.head())
 
-    # df_pp = df_pp[["publication_date", "most_common_1", "most_common_1_num"]]
-    # df_most_common = NER.sum_period_most_common_entities(df_pp)
+    df = df[["publication_date", "most_common_1", "most_common_1_num", "sentiment"]]
+    df_most_common = NER.sum_period_most_common_entities(df)
+    df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
+
+
+
     # df_most_common = NER.fill_entity_gaps(df_most_common)
     # df_most_common = NER.cum_sum_df(df_most_common)
     # df_most_common = NER.select_most_common_per_period(df_most_common)
+    # df_most_common = NER.make_label(df_most_common)
 
     # df_most_common.to_csv("src/logs/df_most_common"+str(datetime.now())+".csv")
-    # print(df_most_common)
+    print(df_most_common)
     # NER.visualize(df_most_common, start_date, end_date)
 
     elapsed_time = time.process_time() - start_time
     print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
 
     pass
+    """

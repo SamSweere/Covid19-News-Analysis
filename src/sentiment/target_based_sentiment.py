@@ -141,5 +141,7 @@ class TargetSentimentAnalyzer:
         sentiment = t_probs.argmax(axis=-1) - 1
         # print('aspect sentiment = ', sentiment)
 
+        # print(sentiment[0])
+
         return sentiment[0]
     
