@@ -108,4 +108,3 @@ def get_representative_df(n_samples, start_date, end_date):
     # take top n
     # get representative sample
     return df
-

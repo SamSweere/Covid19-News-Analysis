@@ -105,17 +105,54 @@ class TargetSentimentAnalyzer:
         torch.autograd.set_grad_enabled(False)
 
     def get_sentiment(self, sentence, target):
-        if(len(sentence) > self.opt.max_seq_len):
-            print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Returning None. " +
-             "Sencence: " + sentence)
-            return None
-
-        # TODO: we work from first occurence if there is more than one target
+        sentence_too_long = False
 
         location = sentence.find(target) # Find gets the first occurence of a substring
         if(location == -1):
             # No occurences, return None
-            return None
+            return (None, sentence_too_long)
+
+
+        if(len(sentence) > self.opt.max_seq_len):
+            sentence_too_long = True
+            # print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Trimming sentence. " +
+            #  "Sencence: " + sentence)
+
+            msl = self.opt.max_seq_len
+
+            loc_tar = location + len(target)/2 # get the middle location of the target
+
+            if(loc_tar - msl/2 >= 0):
+                # Left side not hindered
+                if(loc_tar + msl/2 <= len(sentence)):
+                    # right side not hindered, trim evenly
+                    sentence = sentence[max(int(loc_tar - msl/2),0):int(loc_tar + msl/2)]
+                else:
+                    # right side hindered
+                    right = len(sentence) - loc_tar
+                    left = msl - right
+                    sentence = sentence[max(int(loc_tar - left),0):]
+            else:
+                # Left side hindered
+                left = loc_tar
+                right = msl - left
+
+                if(location + msl/2 <= len(sentence)):
+                    # right side not hindered
+                    sentence = sentence[:int(loc_tar + right)]
+                else:
+                    # right side hindered
+                    print("Error in sentence splitter, both sides are hindered, this cant be the case")
+                    return (None, sentence_too_long)
+            # print("Trimmed sentence:", sentence)
+            # print("Sent lenght:",len(sentence))
+            
+            
+            # return None
+
+        # TODO: we work from first occurence if there is more than one target
+
+        
 
 
         left = sentence[:location]
@@ -143,5 +180,5 @@ class TargetSentimentAnalyzer:
 
         # print(sentiment[0])
 
-        return sentiment[0]
+        return (sentiment[0], sentence_too_long)
     

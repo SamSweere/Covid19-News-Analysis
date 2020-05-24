@@ -174,7 +174,9 @@ class NamedEntityRecognizer:
                     np.put(replacement_candidate, range(surface_form_start, surface_form_end), ent_index)
             
             if len(entity_counts) == 0:
-                return tuple()
+                #TODO: changed this from:
+                # return tuple()
+                return ("None", 0, "".join(list(deepcopy(article.text))))
 
             # TODO replace all mentions of that entity with its entity_name
 
@@ -216,7 +218,7 @@ class NamedEntityRecognizer:
 
         df[["most_common_1", "most_common_1_num", "ner_resolved"]] = pd.DataFrame.from_records(
             df.apply(lambda x: find_most_common_entity(x), axis=1))  # apply to each row
-        df.dropna(inplace=True)
+        # df.dropna(inplace=True)
         df.reset_index(drop=True, inplace=True)    
         return df
 
@@ -269,9 +271,18 @@ class NamedEntityRecognizer:
             sentiment_sum = 0
             count = 0
 
-            for sentence in sentences:
-                sentiment = tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
+            trim_count = 0
+            c_sentence_count = 0
 
+            for sentence in sentences:
+                sentiment_tulp = tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
+                # The tuple contains (sentiment, sentence trimmed)
+                c_sentence_count += 1 #The sentence contains the target word
+                if(sentiment_tulp[1]):
+                    # The sentence was trimmed
+                    trim_count += 1
+
+                sentiment = sentiment_tulp[0]
                 if(sentiment is None):
                     # Nothing found in this sentence
                     continue
@@ -280,12 +291,72 @@ class NamedEntityRecognizer:
                     count += 1
 
             if(count != 0):
-                return sentiment_sum/count
+                if(c_sentence_count == 0):
+                    c_sentence_count = 1
+                return (sentiment_sum/count, trim_count/c_sentence_count)
             else:
-                return 0
+                return (0, trim_count)
+
+        def get_covid_sentiment(sentences):
+            sentiment_sum = 0
+            count = 0
+
+            trim_count = 0
+            c_sentence_count = 0
+
+            for sentence in sentences:
+                sentence = str(sentence)
+                sentence = sentence.lower()
+                covid_list = ["corona", "covid"] #Note that if any substring contains this we will take that as target, thus these are not nescessary "coronavirus","covid-19", "covid19", 
+                
+                parsed_sentence = nlp_nr(sentence, disable=["parser","tagger","entity","ner"])
+                
+                found_covid = False
+
+                for token in parsed_sentence:
+                    tt = str(token.text)
+                    if(found_covid):
+                        break # Stop da loop
+
+                    for word in covid_list:
+                        loc = tt.find(word)
+                        if(loc == -1):
+                            # try next
+                            continue
+                        else:
+                            # get the sentiment of the target word
+                            sentiment_tulp = tsa.get_sentiment(sentence = str(sentence), target = str(tt)) # Convert them to strings
+                            # The tuple contains (sentiment, sentence trimmed)
+                            c_sentence_count += 1 #The sentence contains the target word
+                            if(sentiment_tulp[1]):
+                                # The sentence was trimmed
+                                trim_count += 1
+                            
+                            sentiment = sentiment_tulp[0]
+                            
+                            if(sentiment is None):
+                                # Nothing found in this sentence
+                                continue
+                            else:
+                                sentiment_sum += sentiment
+                                count += 1
+                            
+                            found_covid = True
+                            break
+
+            if(count != 0):
+                if(c_sentence_count == 0):
+                    c_sentence_count = 1
+                return (sentiment_sum/count, trim_count/c_sentence_count)
+            else:
+                return (0, trim_count)
+
 
         # Get the average sentiment for each target
-        df_pp["sentiment"] = df_pp.apply(lambda x: get_average_sentiment(x["sents"], x["most_common_1"]), axis=1)
+        df_pp[["t_sent","t_tls"]] = df_pp.apply(lambda x: pd.Series(get_average_sentiment(x["sents"], x["most_common_1"])), axis=1)
+        df_pp[["c_sent","c_tls"]] = df_pp.apply(lambda x: pd.Series(get_covid_sentiment(x["sents"])), axis=1)
+        # Fill this with ones in order to be able to get the average in the end
+        df_pp["c_count"] = 1
         return df_pp
 
     def show_problems(self, article, visualize=False):
@@ -371,7 +442,9 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
     c_date = start_date
 
     # Name 
-    run_name = "s_" + start_date.strftime("%d_%m_%Y") + "_e_" + end_date.strftime("%d_%m_%Y") + "_app_" + str(articles_per_period) + "_ml_" + str(max_length)
+    run_name = "s_" + start_date.strftime("%d_%m_%Y") + "_e_" \
+        + end_date.strftime("%d_%m_%Y") + "_app_" + str(articles_per_period) \
+        + "_ml_" + str(max_length) + "_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
 
     folder_path = "data/"+run_name
     if not os.path.isdir(folder_path):
@@ -390,7 +463,7 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
     NER = NamedEntityRecognizer()
 
     # Increase until we hit the last day
-    while(c_date != end_date):
+    while(c_date != end_date + timedelta(days=1)):
         print("Running day:",c_date.strftime("%d_%m_%Y"))
         print("Loading Data...\t", str(datetime.now()))
         df = read_data.get_body_df(
@@ -399,6 +472,17 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
             articles_per_period=articles_per_period, #700,
             max_length=max_length
         )
+
+        # df = pd.DataFrame({
+        #     "body": ["Deepika has a dog. She loves him. The movie star has always been fond of animals",
+        #     "The short guy Donald Trump is the worst. He does not know how the world turns.",
+        #     "The tall guy Donald Trump is the best.",
+        #     "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811. Public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
+        #     "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease, there were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
+        #     "Coronavirus disease 2019 (COVID-19) is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2).[10] It was first identified in December 2019 in Wuhan, China, and has since spread globally, resulting in an ongoing pandemic.[11][12] As of 24 May 2020, more than 5.35 million cases have been reported across 188 countries and territories, resulting in more than 343,000 deaths. More than 2.14 million people have recovered."],
+            
+        #     "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
+        # })
 
         df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
 
@@ -413,10 +497,11 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
         df = NER.get_target_sentiments(df, model_size="sm")
 
         # TODO check ner_resolved
-        # print(df_pp.head())
+        print(df.head())
 
-        df = df[["publication_date", "most_common_1", "most_common_1_num", "sentiment"]]
+        # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
         df_most_common = NER.sum_period_most_common_entities(df)
+        print(df_most_common.head())
 
         file_name = c_date.strftime("%d_%m_%Y")
         df_most_common.to_csv(folder_path + "/" + file_name +".csv")
@@ -427,7 +512,7 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
         # Increase the day
         c_date += timedelta(days=1)
     
-    print("Long run finished")
+    print("Multiple day run finished")
     elapsed_time = time.process_time() - start_time
     print("Elapsed time: " + str(round(elapsed_time,2)) + " seconds")
     
@@ -444,8 +529,8 @@ if __name__ == "__main__":
         os.mkdir("src/logs")
 
     start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-04-06", "%Y-%m-%d")
-    run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 1000)
+    end_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
+    run_and_save(start_date, end_date, articles_per_period = 100, max_length = 300)
 
     """
     print("Loading Data...\t", str(datetime.now()))
