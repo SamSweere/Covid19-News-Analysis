@@ -21,7 +21,10 @@ import requests
 sys.path.append("src/")
 import read_data
 
-
+sys.path.append("src/visualization/")
+import visualization.get_viz_data as get_viz_data
+import visualization.matplotlib_viz as viz
+import visualization.bar_chart_race as bar_chart_race
 
 # custom adaption of spacy_dbpedia_spotlight
 sys.path.append("src/spacy_dbpedia_spotlight/")
@@ -103,28 +106,6 @@ class NamedEntityRecognizer:
         print("Completed NLP by...\t", str(datetime.now()))
         return df
 
-    def sum_period_most_common_entities(self, df):
-        """ 
-        @param df: DataFrame with "nlp" column containing spacy preprocessing
-        @param visualization: create bar chart race
-        """
-        # sum up entities for each publication date
-        df_gb = df.groupby(by=["publication_date", "most_common_1"])
-        df_most_common = df_gb.agg(sum).reset_index()
-        return df_most_common
-
-    def select_most_common_per_period(self, df_most_common):
-        # select top 10 for each publication date by cum_sum
-        df_most_common = df_most_common.sort_values(by=["publication_date", "cum_sum"], ascending=False).reset_index()
-        df_most_common = df_most_common.groupby(by=["publication_date"])
-        df_most_common = df_most_common.head(10)
-        return df_most_common
-
-    def visualize(self, df_most_common, start_date, end_date, name_col, color_col):
-        print("Starting Visualization...\t", str(datetime.now()))
-        # viz.animate_NER(df_most_common)
-        bar_chart_race.create_barchart_race(df_most_common, start_date, end_date, name_col, color_col)
-                
     def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str, df_name):
         """ Find most common entity for each article """
         # TODO put a similarity threshold in here somewhere!
@@ -218,39 +199,6 @@ class NamedEntityRecognizer:
         df.reset_index(drop=True, inplace=True)    
         return df
 
-
-    def fill_entity_gaps(self, df_most_common, mc_column):
-        """
-        make sure we keep an absent but known entity around
-        to avoid the bar from disappearing in bar chart race 
-        """
-        # identify missing values
-        all_entities = set(df_most_common[mc_column].unique())
-        df_gb = df_most_common.groupby(by=["publication_date"])
-        date_entities = df_gb[mc_column].aggregate(lambda x: set(x))
-        
-        # TODO add the full rows!
-        # collect rows to add
-        rows_to_add = []
-        for i, d_e in enumerate(date_entities):
-            missing_ents = all_entities.difference(d_e)
-            date = date_entities.index[i]
-            # i: column we want to more or less replicate
-            for e in missing_ents:
-                row = [np.NaN] * len(df_most_common.columns)
-                row[0] = date  # publication_date
-                row[1] = 0.0   # most_common_1
-                rows_to_add.append(tuple(row))
-
-        # add missing rows and sort again
-        df_missing = pd.DataFrame(rows_to_add, columns=df_most_common.columns)
-        df_most_common = pd.concat((df_most_common, df_missing), axis=0).reset_index(drop=True)
-        df_most_common.sort_values(by=[mc_column, "publication_date"], inplace=True)
-        df_missing.fillna(method="ffill")
-        df_most_common.sort_values(by=["publication_date", mc_column], inplace=True)
-
-        return df_most_common
-
     def count_most_frequent(self, group):
         # current approach: most common of the most common - should be ok, I think
         items = [[i[0]] * i[1] for i in group if not (i is None)]
@@ -265,8 +213,6 @@ class NamedEntityRecognizer:
 
     def get_target_sentiments(self, df_pp, targets):        
         df_pp["sents"] = df_pp["ner_resolved"].apply(lambda x: list(self.nlp_nr(x, disable=["tokenizer","tagger","entity","ner"]).sents))
-
-        
 
         def get_average_sentiment(sentences, target):
             sentiment_sum = 0
@@ -387,40 +333,6 @@ class NamedEntityRecognizer:
     def load_preloaded(self, path):
         return pd.read_csv(path)
 
-    def cum_sum_df(self, df, mc_column, mc_num_column):
-        """ return df with monotonically increasing entity mentions """
-        # TODO this does not ensure continuity in case some entity is missing entirely on some days
-        # should be kinda rare but still possible...
-        df = df.sort_values(by=["publication_date", mc_column])
-        df_gb = df.groupby(by=[mc_column])
-        # TODO cumsum stuff doesn't seem to be working yet
-        df["cum_sum"] = df_gb[mc_num_column].apply(pd.Series.cumsum)
-        df.sort_values(by=["publication_date", "cum_sum"], ascending=False, inplace=True)
-        return df
-
-    def average_sent_columns(self, df, mc_num_column):
-        sent_columns = [i for i in df.columns if i.endswith("sent")]
-        for i in sent_columns:
-            df[i] = df[i] / df[mc_num_column]
-        return df
-
-    def prepare_viz(self, df_most_common, mc_column, mc_num_column, with_sentiment=True):
-        if "Unnamed: 0" in df_most_common.columns:
-            df_most_common.drop(columns=["Unnamed: 0"], inplace=True)
-        if with_sentiment:
-            df_most_common = NER.average_sent_columns(df_most_common, mc_num_column)
-            df_most_common.replace(np.inf, np.NaN, inplace=True)
-            df_most_common.replace(-np.inf, np.NaN, inplace=True)
-        df_most_common["publication_date"] = df_most_common["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
-        df_most_common.sort_values(by=["publication_date", mc_num_column], ascending=False, inplace=True)
-        df_most_common[mc_column].replace("None", np.NaN, inplace=True)
-        df_most_common.dropna(subset=[mc_column], inplace=True)
-        df_most_common.reset_index(drop=True, inplace=True)
-        df_most_common = NER.fill_entity_gaps(df_most_common, mc_column)
-        df_most_common = NER.cum_sum_df(df_most_common, mc_column, mc_num_column)
-        df_most_common = NER.select_most_common_per_period(df_most_common)
-        return df_most_common
-
 
 def run_and_save(start_date, end_date, articles_per_period=None, max_length=None, with_sentiments=False, debug=False):
     c_date = start_date
@@ -429,6 +341,7 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
     run_name = "s_" + start_date.strftime("%d_%m_%Y") + "_e_" \
         + end_date.strftime("%d_%m_%Y") + "_app_" + str(articles_per_period) \
         + "_ml_" + str(max_length) + "_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
+    print(f"RUN NAME: {run_name}")
     if debug:
         run_name = "debug_run_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
 
@@ -522,17 +435,9 @@ if __name__ == "__main__":
     start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
     
-    # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
-
-    # TODO load all dataframes for one experiment and concat them together
-    NER = NamedEntityRecognizer(model_size="sm")
-    df_most_common = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
-    df_most_common = NER.prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", with_sentiment=True)
-    print(df_most_common.head())
-    NER.visualize(df_most_common, start_date, end_date, "mc_p", "g_sent")
-
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
-    # run_and_save(start_date, end_date, articles_per_period = 100, max_length = 300, with_sentiments = True, debug=False)
+    run_and_save(start_date, end_date, articles_per_period=100,
+         max_length=300, with_sentiments=False, debug=False)
 
 

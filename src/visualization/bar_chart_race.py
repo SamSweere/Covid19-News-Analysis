@@ -8,25 +8,11 @@ from datetime import datetime, timedelta
 
 # taken from: https://towardsdatascience.com/bar-chart-race-in-python-with-matplotlib-8e687a5c8a41
 
-# plt.close("all")
-
-# url = 'https://gist.githubusercontent.com/johnburnmurdoch/4199dbe55095c3e13de8d5b2e5e5307a/raw/fa018b25c24b7b5f47fd0568937ff6c04e384786/city_populations'
-# df = pd.read_csv(url, usecols=['name', 'group', 'year', 'value'])
-# df.head(3)
-
-# # TODO adapt to our needs
-# colors = dict(zip(
-#     ["India", "Europe", "Asia", "Latin America", "Middle East", "North America", "Africa"],
-#     ["#adb0ff", "#ffb3ff", "#90d595", "#e48381", "#aafbff", "#f7bb5f", "#eafb50"]
-# ))
-# # get dictionary about group memberships
-# group_lk = df.set_index('name')['group'].to_dict()
-
 def get_sent_color(x):
     if x > 0:
-        return (1.-x, x, 1.-x)
+        return (1-x, 1, 1-x)
     else:
-        return (1, 1.+x, 1.+x)
+        return (1, 1+x, 1+x)
 
 
 def draw_barchart(ax, df, date, date_column:str, name_column:str, group_column:str, value_column:str, color_column:str):
