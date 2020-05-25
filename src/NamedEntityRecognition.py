@@ -21,10 +21,7 @@ import requests
 sys.path.append("src/")
 import read_data
 
-sys.path.append("src/visualization/")
-import visualization.get_viz_data as get_viz_data
-import visualization.matplotlib_viz as viz
-import visualization.bar_chart_race as bar_chart_race
+
 
 # custom adaption of spacy_dbpedia_spotlight
 sys.path.append("src/spacy_dbpedia_spotlight/")
@@ -522,17 +519,12 @@ if __name__ == "__main__":
         os.mkdir("src/logs")
 
     # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-    start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
     
     # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
 
-    # TODO load all dataframes for one experiment and concat them together
-    NER = NamedEntityRecognizer(model_size="sm")
-    df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_1000_ml_500_d_25_05_t_04_00")
-    df_most_common = NER.prepare_viz(df_most_common, with_sentiment=True)
-    print(df_most_common.head())
-    NER.visualize(df_most_common, start_date, end_date)
+    
 
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
