@@ -11,8 +11,8 @@ pip3 install -e .
 cd ..
 
 pip3 uninstall spacy
-pip3 install spacy==2.2.4
-python3 -m spacy download en_core_web_sm
+# pip3 install spacy==2.2.4
+
 
 # for gpu use use you might have to isntall:
 # pip install cupy-cuda102
@@ -21,6 +21,8 @@ python3 -m spacy download en_core_web_sm
 # Other dependencies
 
 pip3 install -r extra_requirements.txt
+
+python3 -m spacy download en_core_web_sm
 
 # Run the pd_pedia docker
 # docker run -itd --restart unless-stopped -p 2222:80 dbpedia/spotlight-english spotlight.sh

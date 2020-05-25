@@ -60,7 +60,7 @@ def get_parameters():
     parser.add_argument('--hidden_dim', default=300, type=int)
     parser.add_argument('--bert_dim', default=768, type=int)
     parser.add_argument('--pretrained_bert_name', default='bert-base-uncased', type=str)
-    parser.add_argument('--max_seq_len', default=80, type=int)
+    parser.add_argument('--max_seq_len', default=250, type=int)
     parser.add_argument('--polarities_dim', default=3, type=int)
     parser.add_argument('--hops', default=3, type=int)
     parser.add_argument('--device', default=None, type=str, help='e.g. cuda:0')
@@ -84,7 +84,7 @@ class TargetSentimentAnalyzer:
 
         # set your trained models here
         state_dict_paths = {
-            'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7283',
+            'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7225',
             # 'bert_spc': 'state_dict/bert_spc_laptop_val_acc0.268',
             # 'aen_bert': 'state_dict/aen_bert_laptop_val_acc0.2006'
         }
@@ -105,14 +105,56 @@ class TargetSentimentAnalyzer:
         torch.autograd.set_grad_enabled(False)
 
     def get_sentiment(self, sentence, target):
+        sentence_too_long = False
+
+        location = sentence.find(target) # Find gets the first occurence of a substring
+        if(location == -1):
+            # No occurences, return None
+            return (None, sentence_too_long)
+
+
         if(len(sentence) > self.opt.max_seq_len):
-            print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Returning 0 sentiment. " +
-             "Sencence: " + sentence)
-            return 0
+            sentence_too_long = True
+            # print("To long sentence:" + str(len(sentence)) +", max sentence lenght: " + str(self.opt.max_seq_len) + " Trimming sentence. " +
+            #  "Sencence: " + sentence)
+
+            msl = self.opt.max_seq_len
+
+            loc_tar = location + len(target)/2 # get the middle location of the target
+
+            if(loc_tar - msl/2 >= 0):
+                # Left side not hindered
+                if(loc_tar + msl/2 <= len(sentence)):
+                    # right side not hindered, trim evenly
+                    sentence = sentence[max(int(loc_tar - msl/2),0):int(loc_tar + msl/2)]
+                else:
+                    # right side hindered
+                    right = len(sentence) - loc_tar
+                    left = msl - right
+                    sentence = sentence[max(int(loc_tar - left),0):]
+            else:
+                # Left side hindered
+                left = loc_tar
+                right = msl - left
+
+                if(location + msl/2 <= len(sentence)):
+                    # right side not hindered
+                    sentence = sentence[:int(loc_tar + right)]
+                else:
+                    # right side hindered
+                    print("Error in sentence splitter, both sides are hindered, this cant be the case")
+                    return (None, sentence_too_long)
+            # print("Trimmed sentence:", sentence)
+            # print("Sent lenght:",len(sentence))
+            
+            
+            # return None
 
         # TODO: we work from first occurence if there is more than one target
 
-        location = sentence.find(target) # Find gets the first occurence of a substring
+        
+
+
         left = sentence[:location]
         right = sentence[location + len(target):]
         
@@ -136,5 +178,7 @@ class TargetSentimentAnalyzer:
         sentiment = t_probs.argmax(axis=-1) - 1
         # print('aspect sentiment = ', sentiment)
 
-        return sentiment[0]
+        # print(sentiment[0])
+
+        return (sentiment[0], sentence_too_long)
     

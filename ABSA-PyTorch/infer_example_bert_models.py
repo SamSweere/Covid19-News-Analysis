@@ -112,10 +112,11 @@ if __name__ == '__main__':
     #     prepare_data('This little place has a cute', 'interior decor', 'and affordable city prices.', tokenizer)
 
 
-    text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices = \
-        prepare_data('The tall guy', 'Philip Frederics', 'was the best.', tokenizer)
+    # text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices = \
+    #     prepare_data('The tall guy', 'Philip Frederics', 'was the best.', tokenizer)
 
-    
+    text_bert_indices, bert_segments_ids, text_raw_bert_indices, aspect_bert_indices = \
+        prepare_data('This', 'film', 'does n’t care about cleverness wit or any other kind of intelligent humor.', tokenizer)
     
     text_bert_indices = torch.tensor([text_bert_indices], dtype=torch.int64).to(opt.device)
     bert_segments_ids = torch.tensor([bert_segments_ids], dtype=torch.int64).to(opt.device)

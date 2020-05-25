@@ -135,6 +135,14 @@ class Instructor:
     def _evaluate_acc_f1(self, data_loader):
         n_correct, n_total = 0, 0
         t_targets_all, t_outputs_all = None, None
+
+        # class_count = [0,0,0]
+
+        # true_pos = [0,0,0]
+        # false_neg = [0,0,0]
+        # true_neg = [0,0,0]
+        # false_pos = [0,0,0]
+
         # switch model to evaluation mode
         self.model.eval()
         with torch.no_grad():
@@ -143,8 +151,19 @@ class Instructor:
                 t_targets = t_sample_batched['polarity'].to(self.opt.device)
                 t_outputs = self.model(t_inputs)
 
-                n_correct += (torch.argmax(t_outputs, -1) == t_targets).sum().item()
+                output = torch.argmax(t_outputs, -1)
+                n_correct += (output == t_targets).sum().item()
                 n_total += len(t_outputs)
+
+                # output = output.cpu().numpy()
+                # target = t_targets.cpu().numpy()
+                # for i in range(output.shape[0]):
+                #     x = output[i]
+                #     y = target[i]
+
+                #     class_count[y] += 1
+                #     if(x == y):
+                #         # True postive
 
                 if t_targets_all is None:
                     t_targets_all = t_targets
@@ -185,14 +204,14 @@ def main():
     parser.add_argument('--learning_rate', default=2e-5, type=float, help='try 5e-5, 2e-5 for BERT, 1e-3 for others')
     parser.add_argument('--dropout', default=0.1, type=float)
     parser.add_argument('--l2reg', default=0.01, type=float)
-    parser.add_argument('--num_epoch', default=10, type=int, help='try larger number for non-BERT models')
+    parser.add_argument('--num_epoch', default=20, type=int, help='try larger number for non-BERT models')
     parser.add_argument('--batch_size', default=16, type=int, help='try 16, 32, 64 for BERT models')
     parser.add_argument('--log_step', default=5, type=int)
     parser.add_argument('--embed_dim', default=300, type=int)
     parser.add_argument('--hidden_dim', default=300, type=int)
     parser.add_argument('--bert_dim', default=768, type=int)
     parser.add_argument('--pretrained_bert_name', default='bert-base-uncased', type=str)
-    parser.add_argument('--max_seq_len', default=80, type=int)
+    parser.add_argument('--max_seq_len', default=250, type=int)
     parser.add_argument('--polarities_dim', default=3, type=int)
     parser.add_argument('--hops', default=3, type=int)
     parser.add_argument('--device', default=None, type=str, help='e.g. cuda:0')
