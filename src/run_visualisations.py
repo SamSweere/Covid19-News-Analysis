@@ -10,6 +10,7 @@ sys.path.append("src/visualization/")
 import visualization.get_viz_data as get_viz_data
 import visualization.matplotlib_viz as viz
 import visualization.bar_chart_race as bar_chart_race
+import visualization.world_map as world_map
 
 def cum_sum_df(df, mc_column, mc_num_column):
         """ return df with monotonically increasing entity mentions """
@@ -110,19 +111,47 @@ def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", sent
         df_most_common.dropna(subset=["rolling_sent"], inplace=True)
         return df_most_common
 
+def prepare_countries(df, mc_column="mc_c"):
+        df = sum_period_most_common_entities(df, mc_column)
+        df[mc_column].replace("None", np.NaN, inplace=True)
 
+        # Fixes:
+        df[mc_column].replace("Kingdom of Italy", "Italy", inplace=True)
+        
+
+        df.dropna(subset=[mc_column], inplace=True)
+        if "Unnamed: 0" in df.columns:
+                df.drop(columns=["Unnamed: 0"], inplace=True)
+
+        counts = df[mc_column].value_counts()
+        # df[mc_columnt].groupby(mc_column)[mc_column].count()
+        print(counts)
+        
+        # df["publication_date"] = df["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
+        # df.sort_values(by=["publication_date"], ascending=False, inplace=True)
+        # df.reset_index(drop=True, inplace=True)
+        return counts
 
 if __name__ == "__main__":
 
-    # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
-    
-    # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
+        # TODO: dates 2019-11-06 and 2020-01-01 throw errors
+        start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
+        end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
 
-    # TODO load all dataframes for one experiment and concat them together
-    df_most_common = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
-    df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
-        sent_col="g_sent", with_sentiment=True)
-    print(df_most_common.head())
-    visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
+        # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
+
+        # -------  Country visualizer ------- 
+        # TODO load all dataframes for one experiment and concat them together
+        # df_most_common = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
+        # df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
+        #         sent_col="g_sent", with_sentiment=True)
+        # print(df_most_common.head())
+        # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
+        
+
+
+        # -------  Country visualizer ------- 
+        df = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
+        c_list = prepare_countries(df, mc_column="mc_c")
+
+        world_map.show_world_map(c_list)

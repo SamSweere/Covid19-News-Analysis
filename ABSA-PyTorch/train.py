@@ -203,7 +203,8 @@ class Instructor:
         for test in testsets_data_loaders:
             test_acc, test_f1 = self._evaluate_acc_f1(test[0])
 
-            logger.info('>> for dataset %s test_acc: {:.4f}, test_f1: {:.4f}'.format(test[1],test_acc, test_f1))
+            logger.info('>> for dataset ' + str(test[1]))
+            logger.info('>> test_acc: {:.4f}, test_f1: {:.4f}'.format(test_acc, test_f1))
 
         
 
@@ -218,7 +219,7 @@ def main():
     parser.add_argument('--learning_rate', default=2e-5, type=float, help='try 5e-5, 2e-5 for BERT, 1e-3 for others')
     parser.add_argument('--dropout', default=0.1, type=float)
     parser.add_argument('--l2reg', default=0.01, type=float)
-    parser.add_argument('--num_epoch', default=10, type=int, help='try larger number for non-BERT models')
+    parser.add_argument('--num_epoch', default=5, type=int, help='try larger number for non-BERT models')
     parser.add_argument('--batch_size', default=16, type=int, help='try 16, 32, 64 for BERT models')
     parser.add_argument('--log_step', default=5, type=int)
     parser.add_argument('--embed_dim', default=300, type=int)
