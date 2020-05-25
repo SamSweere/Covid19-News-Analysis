@@ -129,7 +129,7 @@ class NamedEntityRecognizer:
                 
                 # resolve common disambiguitions
                 if text.lower() == "washington":  # in doubt, go for location
-                    standard_ner_ents = {i.text.lower(): i.label_ for i in article_raw["nlp_resolved"].ents}
+                    standard_ner_ents = {i.text.lower(): i.label_ for i in article_raw["nlp"].ents}
                     if "washington" in [i.lower() for i in standard_ner_ents.keys()]:
                         if standard_ner_ents["washington"] == "GPE":
                             dbpedia_labels = "Location_State"
@@ -389,8 +389,8 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
             df = NER.get_general_sentiment(df)
         df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
         df = NER.dbpedia_ner(df) #model_size="lg")
-        df.drop(columns=["nlp"], inplace=True)
         df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
+        df.drop(columns=["nlp"], inplace=True)
         df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
         
         if with_sentiments:
@@ -434,11 +434,6 @@ if __name__ == "__main__":
     start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
     
-<<<<<<< HEAD
-=======
-    # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
-
->>>>>>> 36c1b00f4387202ccf1467330cfcad447d2b08fe
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
     run_and_save(start_date, end_date, articles_per_period=100,
