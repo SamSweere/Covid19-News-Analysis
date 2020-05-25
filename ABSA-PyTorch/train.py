@@ -28,8 +28,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
-
-
 class Instructor:
     def __init__(self, opt):
         self.opt = opt
@@ -51,6 +49,11 @@ class Instructor:
 
         self.trainset = ABSADataset(opt.dataset_file['train'], tokenizer)
         self.testset = ABSADataset(opt.dataset_file['test'], tokenizer)
+
+        self.testsets = []
+        for set in opt.dataset_files:
+            self.testsets.append((ABSADataset(set[0]['test'], tokenizer),set[1]))
+
         assert 0 <= opt.valset_ratio < 1
         if opt.valset_ratio > 0:
             valset_len = int(len(self.trainset) * opt.valset_ratio)
@@ -183,8 +186,12 @@ class Instructor:
         optimizer = self.opt.optimizer(_params, lr=self.opt.learning_rate, weight_decay=self.opt.l2reg)
 
         train_data_loader = DataLoader(dataset=self.trainset, batch_size=self.opt.batch_size, shuffle=True)
-        test_data_loader = DataLoader(dataset=self.testset, batch_size=self.opt.batch_size, shuffle=False)
-        val_data_loader = DataLoader(dataset=self.valset, batch_size=self.opt.batch_size, shuffle=False)
+        test_data_loader = DataLoader(dataset=self.testset, batch_size=self.opt.batch_size, shuffle=True)
+        val_data_loader = DataLoader(dataset=self.valset, batch_size=self.opt.batch_size, shuffle=True)
+
+        testsets_data_loaders = []
+        for test in self.testsets:
+            testsets_data_loaders.append((DataLoader(dataset=test[0], batch_size=self.opt.batch_size, shuffle=True), test[1]))
 
         self._reset_params()
         best_model_path = self._train(criterion, optimizer, train_data_loader, val_data_loader)
@@ -193,12 +200,19 @@ class Instructor:
         test_acc, test_f1 = self._evaluate_acc_f1(test_data_loader)
         logger.info('>> test_acc: {:.4f}, test_f1: {:.4f}'.format(test_acc, test_f1))
 
+        for test in testsets_data_loaders:
+            test_acc, test_f1 = self._evaluate_acc_f1(test[0])
+
+            logger.info('>> for dataset %s test_acc: {:.4f}, test_f1: {:.4f}'.format(test[1],test_acc, test_f1))
+
+        
+
 
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='bert_spc', type=str)
-    parser.add_argument('--dataset', default='laptop', type=str, help='twitter, restaurant, laptop')
+    parser.add_argument('--dataset', default='combined', type=str, help='twitter, restaurant, laptop, combined')
     parser.add_argument('--optimizer', default='adam', type=str)
     parser.add_argument('--initializer', default='xavier_uniform_', type=str)
     parser.add_argument('--learning_rate', default=2e-5, type=float, help='try 5e-5, 2e-5 for BERT, 1e-3 for others')
@@ -263,6 +277,10 @@ def main():
         'laptop': {
             'train': './datasets/semeval14/Laptops_Train.xml.seg',
             'test': './datasets/semeval14/Laptops_Test_Gold.xml.seg'
+        },
+        'combined': {
+            'train': './datasets/combined_train.raw',
+            'test': './datasets/combined_test.raw'
         }
     }
     input_colses = {
@@ -297,6 +315,7 @@ def main():
     }
     opt.model_class = model_classes[opt.model_name]
     opt.dataset_file = dataset_files[opt.dataset]
+    opt.dataset_files = [(dataset_files['twitter'],"twitter"),(dataset_files['restaurant'],"restaurant"),(dataset_files['laptop'],"laptop")]
     opt.inputs_cols = input_colses[opt.model_name]
     opt.initializer = initializers[opt.initializer]
     opt.optimizer = optimizers[opt.optimizer]
