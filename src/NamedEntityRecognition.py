@@ -532,7 +532,7 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
         print(df_most_common.head())
 
         file_name = c_date.strftime("%d_%m_%Y")
-        df_most_common.to_csv(folder_path + "/" + file_name +".csv")
+        df_most_common.to_csv(folder_path + "/" + file_name +".csv", index=False)
 
         # Increase the day
         c_date += timedelta(days=1)
