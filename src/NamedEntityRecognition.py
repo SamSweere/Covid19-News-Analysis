@@ -126,7 +126,7 @@ class NamedEntityRecognizer:
         # viz.animate_NER(df_most_common)
         bar_chart_race.create_barchart_race(df_most_common, start_date, end_date)
                 
-    def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str):
+    def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str, df_name):
         """ Find most common entity for each article """
         # TODO put a similarity threshold in here somewhere!
         def find_most_common_entity(article_raw):
@@ -213,7 +213,7 @@ class NamedEntityRecognizer:
                     start -= 1
             return (mce, mce_val, "".join(ner_resolved))
 
-        df[["most_common_1", "most_common_1_num", "ner_resolved"]] = pd.DataFrame.from_records(
+        df[[df_name, df_name+"_num", "ner_resolved"]] = pd.DataFrame.from_records(
             df.apply(lambda x: find_most_common_entity(x), axis=1))  # apply to each row
         # df.dropna(inplace=True)
         df.reset_index(drop=True, inplace=True)    
@@ -259,7 +259,7 @@ class NamedEntityRecognizer:
 
         return df
 
-    def get_target_sentiments(self, df_pp):        
+    def get_target_sentiments(self, df_pp, targets):        
         df_pp["sents"] = df_pp["ner_resolved"].apply(lambda x: list(self.nlp_nr(x, disable=["tokenizer","tagger","entity","ner"]).sents))
 
         
@@ -351,7 +351,10 @@ class NamedEntityRecognizer:
         # print(df_pp)
 
         # Get the average sentiment for each target
-        df_pp[["t_sent","t_tls"]] = df_pp.apply(lambda x: pd.Series(get_average_sentiment(x["sents"], x["most_common_1"])), axis=1)
+        for target in targets:
+            df_pp[[target + "_sent",target + "_tls"]] = df_pp.apply(lambda x: pd.Series(get_average_sentiment(x["sents"], x[target])), axis=1)
+        
+        
         df_pp[["c_sent","c_tls"]] = df_pp.apply(lambda x: pd.Series(get_covid_sentiment(x["sents"])), axis=1)
         # Fill this with ones in order to be able to get the average in the end
         df_pp["c_count"] = 1
@@ -410,7 +413,7 @@ class NamedEntityRecognizer:
         return df_most_common
 
 
-def run_and_save(start_date, end_date, articles_per_period=None, max_length=None, debug=False, with_sentiments=False):
+def run_and_save(start_date, end_date, articles_per_period=None, max_length=None, with_sentiments=False, debug=False):
     c_date = start_date
 
     # Name 
@@ -418,7 +421,7 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
         + end_date.strftime("%d_%m_%Y") + "_app_" + str(articles_per_period) \
         + "_ml_" + str(max_length) + "_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
     if debug:
-        run_name = "debug_run"
+        run_name = "debug_run_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
 
     folder_path = "data/"+run_name
     if not os.path.isdir(folder_path):
@@ -460,25 +463,34 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
                 "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
             })
 
-        df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
+        df = NER.spacy_preprocessing(df) # model_size="lg")
         if with_sentiments:
             df = NER.get_general_sentiment(df)
         df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
-        df = NER.dbpedia_ner(df, model_size="sm") #model_size="lg")
+        df = NER.dbpedia_ner(df) #model_size="lg")
         df.drop(columns=["nlp"], inplace=True)
-        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
+        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
+        
         if with_sentiments:
-            df = NER.get_target_sentiments(df, model_size="sm")
+            df = NER.get_target_sentiments(df, targets = ["mc_p","mc_c"])
+            df.drop(columns=["sents"], inplace=True)
 
+        # print(df.to_string())
+
+        df.drop(columns=["nlp_resolved","ner_resolved"], inplace=True)
         # TODO check ner_resolved
         # print("aft ts",df.head())
+        
 
-        # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
-        df_most_common = NER.sum_period_most_common_entities(df)
-        print(df_most_common.head())
+        # # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
+        # df_most_common = NER.sum_period_most_common_entities(df)
+        # print(df_most_common.head())
 
+
+        print(df.head())
         file_name = c_date.strftime("%d_%m_%Y")
-        df_most_common.to_csv(folder_path + "/" + file_name +".csv", index=False)
+        df.to_csv(folder_path + "/" + file_name +".csv", index=False)
 
         # Increase the day
         c_date += timedelta(days=1)
@@ -498,15 +510,15 @@ if __name__ == "__main__":
         os.mkdir("src/logs")
 
     # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
-    run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
+    run_and_save(start_date, end_date, articles_per_period = 100, max_length = 300, with_sentiments = True, debug=False)
 
-    # TODO load all dataframes for one experiment and concat them together
-    NER = NamedEntityRecognizer()
-    df_most_common = pd.read_csv("runs/s_01_02_2020_e_05_04_2020_app_1000_ml_500_d_25_05_t_04_00/31_03_2020.csv", index_col=False)
-    df_most_common = NER.prepare_viz(df_most_common)
-    print(df_most_common)
-    NER.visualize(df_most_common, start_date, end_date)
+    # # TODO load all dataframes for one experiment and concat them together
+    # NER = NamedEntityRecognizer(model_size="sm")
+    # df_most_common = pd.read_csv("runs/s_01_02_2020_e_05_04_2020_app_1000_ml_500_d_25_05_t_04_00/31_03_2020.csv", index_col=False)
+    # df_most_common = NER.prepare_viz(df_most_common)
+    # print(df_most_common)
+    # NER.visualize(df_most_common, start_date, end_date)
 
 
