@@ -1,7 +1,7 @@
 #!/usr/local_rwth/bin/zsh
 
 #SBATCH --job-name=train_lcf_bert
-#SBATCH --output=cluster_logs/absa_%J.txt
+#SBATCH --output=cluster_logs/lcf_%J.txt
 #SBATCH --time=11:59:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=8G
@@ -14,6 +14,6 @@ source ../tm_env/bin/activate
 
 echo "Starting training."
 
-python3 train.py --model_name lcf_bert --dataset twitter
+python3 train.py --model_name lcf_bert --dataset combined
 
 echo "Script completed."

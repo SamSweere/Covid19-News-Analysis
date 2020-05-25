@@ -6,3 +6,5 @@ pytorch-transformers==1.2.0
 torch>=0.4.0
 sklearn
 spacy-pytorch-transformers[cuda100]
+textacy==0.9.1
+nltk==3.5

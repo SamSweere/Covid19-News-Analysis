@@ -213,13 +213,13 @@ if __name__ == "__main__":
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=1000, #700,
+        articles_per_period=100, #700,
         max_length=500
     )
     df = ta.apply_nlp(df)
     doc_term_matrix = ta.get_doc_term_matrix(df)
     doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix, fit=True)
-    all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix, fit=True)
+    all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
     ta.visualize("Find Topics", doc_term_matrix)
     topics_per_day = ta.get_topics_per_day(all_topics)
     print(topics_per_day)

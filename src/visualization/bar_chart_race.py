@@ -83,5 +83,5 @@ def create_barchart_race(df, start_date, end_date, name_col, color_col):
     fig, ax = plt.subplots(figsize=(15, 8))
 
     animator = animation.FuncAnimation(fig, curry_barchart, frames=range(0, period_length))
-    animator.save("src/figures/animation_attempt.mov", fps=1)
+    animator.save("src/figures/animation_attempt.mp4", fps=1)
     plt.close("all")
