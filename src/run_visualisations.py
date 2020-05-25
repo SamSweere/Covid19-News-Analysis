@@ -117,20 +117,21 @@ def prepare_countries(df, mc_column="mc_c"):
 
         # Fixes:
         df[mc_column].replace("Kingdom of Italy", "Italy", inplace=True)
+        df[mc_column].replace("Republic of Ireland", "Ireland", inplace=True)
         
 
         df.dropna(subset=[mc_column], inplace=True)
         if "Unnamed: 0" in df.columns:
                 df.drop(columns=["Unnamed: 0"], inplace=True)
 
-        counts = df[mc_column].value_counts()
+        counts_df = df[mc_column].value_counts().rename_axis('country').reset_index(name='counts')
         # df[mc_columnt].groupby(mc_column)[mc_column].count()
-        print(counts)
+        print(counts_df)
         
         # df["publication_date"] = df["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
         # df.sort_values(by=["publication_date"], ascending=False, inplace=True)
         # df.reset_index(drop=True, inplace=True)
-        return counts
+        return counts_df
 
 if __name__ == "__main__":
 
