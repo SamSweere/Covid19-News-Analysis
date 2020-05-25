@@ -73,7 +73,7 @@ def draw_barchart(ax, df, date, date_column:str, name_column:str, group_column:s
 #     draw_barchart(df, days, "year", "name", "group", "value")
 
 
-def create_barchart_race(df, start_date, end_date):
+def create_barchart_race(df, start_date, end_date, name_col, color_col):
 
     # TODO use start_date, end_date
     period_length = (end_date - start_date).days
@@ -89,10 +89,10 @@ def create_barchart_race(df, start_date, end_date):
             df=df,
             date=date,
             date_column="publication_date",
-            name_column="most_common_1",
+            name_column=name_col,
             group_column=None,
             value_column="cum_sum",
-            color_column="t_sent"
+            color_column=color_col
         )
     fig, ax = plt.subplots(figsize=(15, 8))
 

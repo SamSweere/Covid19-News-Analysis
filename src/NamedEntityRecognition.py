@@ -112,10 +112,6 @@ class NamedEntityRecognizer:
         df_gb = df.groupby(by=["publication_date", "most_common_1"])
         df_most_common = df_gb.agg(sum).reset_index()
         return df_most_common
-
-    
-
-    
                 
     def find_most_common_entities(self, df, nlp_doc_colname:str, entity_type:str, df_name):
         """ Find most common entity for each article """
@@ -209,9 +205,6 @@ class NamedEntityRecognizer:
         # df.dropna(inplace=True)
         df.reset_index(drop=True, inplace=True)    
         return df
-
-
-    
 
     def count_most_frequent(self, group):
         # current approach: most common of the most common - should be ok, I think
@@ -349,13 +342,6 @@ class NamedEntityRecognizer:
     def load_preloaded(self, path):
         return pd.read_csv(path)
 
-    
-
-    
-
-    
-
-
 def run_and_save(start_date, end_date, articles_per_period=None, max_length=None, with_sentiments=False, debug=False):
     c_date = start_date
 
@@ -457,8 +443,6 @@ if __name__ == "__main__":
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
     
     # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
-
-    
 
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")

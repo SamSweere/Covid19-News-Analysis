@@ -24,5 +24,5 @@ def load_data(folder_name):
             df = pd.concat([df, pd.read_csv(file_path, index_col=0)])
 
 
-    return df
+    return df.reset_index()
 
