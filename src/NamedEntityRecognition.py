@@ -360,7 +360,7 @@ class NamedEntityRecognizer:
             else:
                 return (0, trim_count)
 
-        print(df_pp)
+        # print(df_pp)
 
         # Get the average sentiment for each target
         df_pp[["t_sent","t_tls"]] = df_pp.apply(lambda x: pd.Series(get_average_sentiment(x["sents"], x["most_common_1"])), axis=1)
@@ -523,7 +523,7 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
 
         # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
         df_most_common = NER.sum_period_most_common_entities(df)
-        # print(df_most_common.head())
+        print(df_most_common.head())
 
         file_name = c_date.strftime("%d_%m_%Y")
         df_most_common.to_csv(folder_path + "/" + file_name +".csv")
