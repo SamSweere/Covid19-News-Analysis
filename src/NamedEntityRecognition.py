@@ -497,7 +497,7 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
         #     "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
         # })
 
-        print("pre pre",df.head())
+        # print("pre pre",df.head())
 
         df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
 
@@ -506,7 +506,7 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
 
         df = df.drop(columns=["body"]) # Drop some columns to make some space
 
-        print("aftg",df.head())
+        # print("aftg",df.head())
 
         df = NER.dbpedia_ner(df, model_size="sm") #model_size="lg")
         # Cleanup df_pp by removing nlp
@@ -514,16 +514,16 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
 
         df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
         
-        print("aft ce, pre ts",df.head())
+        # print("aft ce, pre ts",df.head())
 
         df = NER.get_target_sentiments(df, model_size="sm")
 
         # TODO check ner_resolved
-        print("aft ts",df.head())
+        # print("aft ts",df.head())
 
         # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
         df_most_common = NER.sum_period_most_common_entities(df)
-        print(df_most_common.head())
+        # print(df_most_common.head())
 
         file_name = c_date.strftime("%d_%m_%Y")
         df_most_common.to_csv(folder_path + "/" + file_name +".csv")
