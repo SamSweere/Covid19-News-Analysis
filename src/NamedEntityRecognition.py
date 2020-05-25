@@ -333,10 +333,6 @@ class NamedEntityRecognizer:
     def load_preloaded(self, path):
         return pd.read_csv(path)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 36c1b00f4387202ccf1467330cfcad447d2b08fe
 def run_and_save(start_date, end_date, articles_per_period=None, max_length=None, with_sentiments=False, debug=False):
     c_date = start_date
 
