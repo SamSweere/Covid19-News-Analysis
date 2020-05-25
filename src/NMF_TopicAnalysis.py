@@ -222,3 +222,4 @@ if __name__ == "__main__":
     topics_per_day = ta.get_topics_per_day(all_topics)
     print(topics_per_day)
 
+    # TODO find events data set and annotate the gaph further!  
