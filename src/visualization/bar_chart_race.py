@@ -84,7 +84,7 @@ def create_barchart_race(df, start_date, end_date):
             date_column="publication_date",
             name_column="most_common_1",
             group_column=None,
-            value_column="label"
+            value_column="most_common_1_num"
         )
     fig, ax = plt.subplots(figsize=(15, 8))
 
