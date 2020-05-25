@@ -101,6 +101,7 @@ class TopicAnalyser:
         #     print(i, ":\t", top_topic_terms[i][1][:3])        
         self.topic_model.termite_plot(doc_term_matrix, self.vectorizer.id_to_term, topics=-1)
         plt.title(title)
+        plt.tight_layout()
         plt.savefig(self.graphicspath+title+self.image_type)
         # plt.show()
 
@@ -191,34 +192,35 @@ if __name__ == "__main__":
     if not os.path.isdir("../experiments"):
         os.mkdir("../experiments")
 
-    start_date = datetime.strptime("2020-03-15", "%Y-%m-%d")
+    ta = TopicAnalyser()
+    start_date = datetime.strptime("2020-02-15", "%Y-%m-%d")
     end_date = datetime.strptime("2020-04-06", "%Y-%m-%d")
 
-    # Pass with representative fitting data to find and name topics
-    print("Loading Data...\t", str(datetime.now()))
-    representative_df = read_data.get_representative_df(
-        n_samples=200,
-        start_date=start_date,
-        end_date=end_date
-    )
-    ta = TopicAnalyser()
-    representative_df = ta.apply_nlp(representative_df)
-    rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
-    rep_doc_topic_matrix = ta.get_doc_topic_matrix(rep_doc_term_matrix, fit=True)
-    ta.visualize("Find Topics", rep_doc_term_matrix)
+    # # Pass with representative fitting data to find and name topics
+    # print("Loading Data...\t", str(datetime.now()))
+    # representative_df = read_data.get_representative_df(
+    #     n_samples=10000,
+    #     start_date=start_date,
+    #     end_date=end_date
+    # )
+    # representative_df = ta.apply_nlp(representative_df)
+    # rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
+    # rep_doc_topic_matrix = ta.get_doc_topic_matrix(rep_doc_term_matrix, fit=True)
+    # ta.visualize("Find Topics", rep_doc_term_matrix)
 
     # Pass with specific data set
     print("Loading Data...\t", str(datetime.now()))
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=300, #700,
-        max_length=300
+        articles_per_period=1000, #700,
+        max_length=500
     )
     df = ta.apply_nlp(df)
     doc_term_matrix = ta.get_doc_term_matrix(df)
-    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
-    all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
+    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix, fit=True)
+    all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix, fit=True)
+    ta.visualize("Find Topics", rep_doc_term_matrix)
     topics_per_day = ta.get_topics_per_day(all_topics)
     print(topics_per_day)
 
