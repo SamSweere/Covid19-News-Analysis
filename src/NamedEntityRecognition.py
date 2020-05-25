@@ -35,55 +35,67 @@ from sentiment import general_sentiment
 
 
 class NamedEntityRecognizer:
-    def __init__(self):
-        pass
+    def __init__(self, model_size):
+        assert model_size in ["sm", "lg"]
+        self.nlp = spacy.load(f"en_core_web_{model_size}")  # "eng_core_web_lg" for better but slower results
+        coref = neuralcoref.NeuralCoref(self.nlp.vocab, greedyness=0.4)
+        self.nlp.add_pipe(coref, name='neuralcoref')
 
-    def spacy_preprocessing(self, df, model_size):
+
+        self.nlp_pp = spacy.load(f"en_core_web_{model_size}")
+
+        self.nlp_dbp = spacy.load(f"en_core_web_{model_size}", disable=["ner"])
+        initialize.load('en', self.nlp_dbp)
+
+
+        self.nlp_nr = spacy.load(f"en_core_web_{model_size}")
+
+        # Load target based sentiment
+        self.tsa = target_based_sentiment.TargetSentimentAnalyzer()  
+
+        # Load general based sentiment
+        self.gsa = general_sentiment.GeneralSentimentAnalyzer()
+
+    def spacy_preprocessing(self, df):
         # TODO build separate pipelines for dbpedia vs. standard NER
         # build param for _sm / _lg model
-        assert model_size in ["sm", "lg"]
-        nlp = spacy.load(f"en_core_web_{model_size}")  # "eng_core_web_lg" for better but slower results
+        
         # TODO do we need/want entity merger?
         # merge_ents = nlp.create_pipe("merge_entities'")
         # nlp.add_pipe(merge_ents)
-        coref = neuralcoref.NeuralCoref(nlp.vocab, greedyness=0.4)
-        nlp.add_pipe(coref, name='neuralcoref')
         print("Starting NLP...\t", str(datetime.now()))
         print("------------------------")
-        print(nlp.pipe_names)
+        print(self.nlp.pipe_names)
         print("------------------------")
         # df["nlp"] = [i for i in nlp.pipe(df["body"], batch_size=10, n_threads=6)]  # didn't really speed up anything
         # res = pd.DataFrame(df["body"].apply(nlp))
         # res.columns = ["nlp"]
 
-        df["nlp"] = df["body"].apply(nlp)
+        df["nlp"] = df["body"].apply(self.nlp)
         return df
 
-    def spacy_ner(self, df, model_size):
+    def spacy_ner(self, df):
         """ Use spacy CNN NER """
-        # TODO should we try some of https://github.com/explosion/spaCy/tree/2d249a9502bfc5d3d2111165672d964b1eebe35e/bin/wiki_entity_linking
-        assert model_size in ["sm", "lg"]
-        nlp_pp = spacy.load(f"en_core_web_{model_size}")
+        # TODO should we try some of https://github.com/explosion/spaCy/tree/2d249a9502bfc5d3d2111165672d964b1eebe35e/bin/wiki_entity_linking        
         print("Starting NLP Coref\t", str(datetime.now()))
         print("------------------------")   
-        print("Spacy NER pipeline:", nlp_pp.pipe_names)   
+        print("Spacy NER pipeline:", self.nlp_pp.pipe_names)   
         print("------------------------")   
-        df["nlp_resolved"] = df["nlp"].apply(lambda x: nlp_pp(x._.coref_resolved))
+        df["nlp_resolved"] = df["nlp"].apply(lambda x: self.nlp_pp(x._.coref_resolved))
         print("Completed NLP by...\t", str(datetime.now()))
         return df
 
-    def dbpedia_ner(self, df, model_size):
+    def dbpedia_ner(self, df):
         """ Use DBPedia matching """
-        assert model_size in ["sm", "lg"]
-        nlp_pp = spacy.load(f"en_core_web_{model_size}", disable=["ner"])
+        
         # TODO we might be throwing out a lot of stuff in entity_linker (spacy_dbpedia_spotlight), maybe go check?
-        initialize.load('en', nlp_pp)
+        
         print("Starting NLP Coref", str(datetime.now()))
         print("------------------------")   
-        print("DBPedia NER pipeline:", nlp_pp.pipe_names)   
+        print("DBPedia NER pipeline:", self.nlp_dbp.pipe_names)   
         print("------------------------")
         def inner(x):
-            return nlp_pp(x)
+            return self.nlp_dbp(x)
 
         df["nlp_resolved"] = df["nlp"].apply(lambda x: inner(x._.coref_resolved))
         # res = pd.DataFrame(df["nlp"].apply(lambda x: inner(x._.coref_resolved)))
@@ -243,20 +255,14 @@ class NamedEntityRecognizer:
         return most_common[0][0]  # get only the phrase for now
 
     def get_general_sentiment(self, df):
-        # Load general based sentiment
-        gsa = general_sentiment.GeneralSentimentAnalyzer()
-
-        df["g_sent"] = df["body"].apply(lambda x: gsa.get_general_sentiment(x))
+        df["g_sent"] = df["body"].apply(lambda x: self.gsa.get_general_sentiment(x))
 
         return df
 
-    def get_target_sentiments(self, df_pp, model_size):
-        assert model_size in ["sm", "lg"]
-        nlp_nr = spacy.load(f"en_core_web_{model_size}")
-        df_pp["sents"] = df_pp["ner_resolved"].apply(lambda x: list(nlp_nr(x, disable=["tokenizer","tagger","entity","ner"]).sents))
+    def get_target_sentiments(self, df_pp):        
+        df_pp["sents"] = df_pp["ner_resolved"].apply(lambda x: list(self.nlp_nr(x, disable=["tokenizer","tagger","entity","ner"]).sents))
 
-        # Load target based sentiment
-        tsa = target_based_sentiment.TargetSentimentAnalyzer()  
+        
 
         def get_average_sentiment(sentences, target):
             sentiment_sum = 0
@@ -266,7 +272,7 @@ class NamedEntityRecognizer:
             c_sentence_count = 0
 
             for sentence in sentences:
-                sentiment_tulp = tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
+                sentiment_tulp = self.tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
                 # The tuple contains (sentiment, sentence trimmed)
                 c_sentence_count += 1 #The sentence contains the target word
                 if(sentiment_tulp[1]):
@@ -300,7 +306,7 @@ class NamedEntityRecognizer:
                 sentence = sentence.lower()
                 covid_list = ["corona", "covid"] #Note that if any substring contains this we will take that as target, thus these are not nescessary "coronavirus","covid-19", "covid19", 
                 
-                parsed_sentence = nlp_nr(sentence, disable=["parser","tagger","entity","ner"])
+                parsed_sentence = self.nlp_nr(sentence, disable=["parser","tagger","entity","ner"])
                 
                 found_covid = False
 
@@ -316,7 +322,7 @@ class NamedEntityRecognizer:
                             continue
                         else:
                             # get the sentiment of the target word
-                            sentiment_tulp = tsa.get_sentiment(sentence = str(sentence), target = str(tt)) # Convert them to strings
+                            sentiment_tulp = self.tsa.get_sentiment(sentence = str(sentence), target = str(tt)) # Convert them to strings
                             # The tuple contains (sentiment, sentence trimmed)
                             c_sentence_count += 1 #The sentence contains the target word
                             if(sentiment_tulp[1]):
@@ -428,7 +434,7 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
 
     start_time = time.process_time()
 
-    NER = NamedEntityRecognizer()
+    NER = NamedEntityRecognizer(model_size="sm")  # model_size="lg")
 
     # Increase until we hit the last day
     while(c_date != end_date + timedelta(days=1)):
