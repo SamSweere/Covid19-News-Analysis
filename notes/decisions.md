@@ -25,3 +25,5 @@ We find that NMF gives us topics that have a lot less overlap than those found b
 We need to get rid of newlines and all kinds of punctuation
 
 Seems like our text has some form of non-standard encoding, like typographic quotes and such.
+We reomove all non-unicode things
+We add the names of major news outlets and the like to the list of stopwords

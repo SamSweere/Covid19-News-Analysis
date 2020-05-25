@@ -15,6 +15,7 @@ from nltk.corpus import stopwords
 import matplotlib.pyplot as plt
 import scipy
 import pandas as pd
+import unicodedata
 np.random.seed(0)
 
 
@@ -36,9 +37,11 @@ class TopicAnalyser:
 
     def apply_nlp(self, df):
         # remove punctuation
+        print("Cleaning Text")
         df["clean_body"] = df["body"].apply(lambda x: self.clean_text(x))
         # We rely on spacy for all preprocessing
         # TODO not sure if we are feeding textacy exactly what it wants
+        print("Apply NLP")
         model_size = "sm"
         nlp = spacy.load(f"en_core_web_{model_size}", disable=["parser", "ner"])
         df["nlp"] = df["clean_body"].apply(nlp)
@@ -53,8 +56,14 @@ class TopicAnalyser:
 
     def get_nmf_model(self):
         # TODO how can we get this to converge?
-        model = textacy.tm.TopicModel("nmf", n_topics=10)
+        model = textacy.tm.TopicModel("nmf", n_topics=9)
         return model
+
+    def get_custom_stopwords(self):
+        """ remove news outlet names and the like """
+        custom = ["say", "news", "reuters", "cbcca", "getty", "reuter"]
+        custom_stopwords = stopwords.words('english') + ["-PRON-"] + custom
+        return custom_stopwords
 
     def get_doc_term_matrix(self, df, fit=False):
         """ 
@@ -71,7 +80,8 @@ class TopicAnalyser:
         # docs = [j.lemma for i in df["nlp"] for j in i]
         # docs = [i.doc.text for i in df["nlp"]]
         print("Getting Doc-Term Matrix...\t", str(datetime.now()))
-        my_terms_list=[[tok.lemma_ for tok in doc if tok.lemma_ not in (stopwords.words('english') + ["-PRON-"])] 
+        custom_stopwords = self.get_custom_stopwords()
+        my_terms_list=[[tok.lemma_ for tok in doc if tok.lemma_ not in custom_stopwords] 
             for doc in df["nlp"]]
         if fit:
             self.vectorizer.fit(my_terms_list)
@@ -115,13 +125,16 @@ class TopicAnalyser:
         # https://towardsdatascience.com/topic-modeling-quora-questions-with-lda-nmf-aff8dce5e1dd
         '''Make text lowercase, remove text in square brackets, remove punctuation and remove words containing numbers.'''
         text = text.lower()
-        text = re.sub(r'\[.*?\]', '', text)
+        # text = unicodedata.normalize("NFKD", text)
+        text = re.sub(r'\[.*?\]', "", text)
         text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
-        text = re.sub(r'\w*\d\w*', '', text)
-        text = re.sub(r'\n', '', text)
+        text = re.sub(r'\w*\d\w*', "", text)
+        text = re.sub(r'\n|\t', "", text)
+        text = re.sub('[^a-zA-Z0-9 \n\.]', "", text)
         # TODO should we replace hyphons?
         # test = re.sub(r"\-", "")
         # TODO write a better regex for this stuff
+        text = text.replace("\xa0", "")
         text = text.replace("’s", "")
         text = text.replace("’", "")
         text = text.replace('"', "")
@@ -158,13 +171,13 @@ class TopicAnalyser:
         all_topics = all_topics.loc[:, ["publication_date", "topic_0"]]
         df_gb = all_topics.groupby(by=["publication_date", "topic_0"])
         res = (pd.DataFrame(df_gb["topic_0"].
-            apply(sum)).
-            rename({"topic_0": "sum"}, axis=1).
+            agg(["sum", "mean"])).
             reset_index().
             rename({"topic_0": "main_topic"}, axis=1))
         # set nicer topic names
         res["main_topic"] = res["main_topic"].replace(topic_names)
-        res.to_csv("src/topic_frequency.csv", index=False)
+        # "+str(datetime.now())+"
+        res.to_csv("src/TopicAnalysis/topic_frequency.csv", index=False)
         return res
 
     # # Just in case we want to remove certain types of token
@@ -193,7 +206,8 @@ if __name__ == "__main__":
         os.mkdir("../experiments")
 
     ta = TopicAnalyser()
-    start_date = datetime.strptime("2020-02-15", "%Y-%m-%d")
+    start_date = datetime.strptime("2019-11-01", "%Y-%m-%d")
+    # start_date = datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date = datetime.strptime("2020-04-06", "%Y-%m-%d")
 
     # # Pass with representative fitting data to find and name topics
@@ -213,8 +227,8 @@ if __name__ == "__main__":
     df = read_data.get_body_df(
         start_date=start_date,
         end_date=end_date,
-        articles_per_period=100, #700,
-        max_length=500
+        # articles_per_period=1000, #700,
+        # max_length=1000
     )
     df = ta.apply_nlp(df)
     doc_term_matrix = ta.get_doc_term_matrix(df)
@@ -224,4 +238,3 @@ if __name__ == "__main__":
     topics_per_day = ta.get_topics_per_day(all_topics)
     print(topics_per_day)
 
-    # TODO find events data set and annotate the gaph further!  

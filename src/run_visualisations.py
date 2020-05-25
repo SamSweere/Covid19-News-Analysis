@@ -11,6 +11,7 @@ import visualization.get_viz_data as get_viz_data
 import visualization.matplotlib_viz as viz
 import visualization.bar_chart_race as bar_chart_race
 
+
 def cum_sum_df(df, mc_column, mc_num_column):
         """ return df with monotonically increasing entity mentions """
         # TODO this does not ensure continuity in case some entity is missing entirely on some days
@@ -109,7 +110,6 @@ def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", sent
         df_most_common["rolling_sent"] = df_most_common[sent_col].rolling(5).mean()
         df_most_common.dropna(subset=["rolling_sent"], inplace=True)
         return df_most_common
-
 
 
 if __name__ == "__main__":
