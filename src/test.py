@@ -21,6 +21,10 @@ df = pd.DataFrame({
     "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
 })
 
+
+
+
+
 NER = NamedEntityRecognizer()
 
 df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
@@ -43,6 +47,14 @@ df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person")  # 
 
 df = NER.get_target_sentiments(df, model_size="sm")
 print(df.head())
+
+
+
+
+
+
+
+
 
 # print(df.head())
 

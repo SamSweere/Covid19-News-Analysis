@@ -31,6 +31,7 @@ from spacy_dbpedia_spotlight import entity_linker
 from spacy_dbpedia_spotlight import initialize
 
 from sentiment import target_based_sentiment
+from sentiment import general_sentiment
 
 
 class NamedEntityRecognizer:
@@ -259,6 +260,14 @@ class NamedEntityRecognizer:
         most_common = Counter(items).most_common(1)
         return most_common[0][0]  # get only the phrase for now
 
+    def get_general_sentiment(self, df):
+        # Load general based sentiment
+        gsa = general_sentiment.GeneralSentimentAnalyzer()
+
+        df["g_sent"] = df["body"].apply(lambda x: gsa.get_general_sentiment(x))
+
+        return df
+
     def get_target_sentiments(self, df_pp, model_size):
         assert model_size in ["sm", "lg"]
         nlp_nr = spacy.load(f"en_core_web_{model_size}")
@@ -351,6 +360,7 @@ class NamedEntityRecognizer:
             else:
                 return (0, trim_count)
 
+        print(df_pp)
 
         # Get the average sentiment for each target
         df_pp[["t_sent","t_tls"]] = df_pp.apply(lambda x: pd.Series(get_average_sentiment(x["sents"], x["most_common_1"])), axis=1)
@@ -358,6 +368,9 @@ class NamedEntityRecognizer:
         # Fill this with ones in order to be able to get the average in the end
         df_pp["c_count"] = 1
         return df_pp
+    
+
+
 
     def show_problems(self, article, visualize=False):
         """ 
@@ -484,20 +497,29 @@ def run_and_save(start_date, end_date, articles_per_period = None, max_length = 
         #     "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
         # })
 
+        print("pre pre",df.head())
+
         df = NER.spacy_preprocessing(df, model_size="sm") # model_size="lg")
 
+        # Get the general sentiment
+        df = NER.get_general_sentiment(df)
+
         df = df.drop(columns=["body"]) # Drop some columns to make some space
+
+        print("aftg",df.head())
 
         df = NER.dbpedia_ner(df, model_size="sm") #model_size="lg")
         # Cleanup df_pp by removing nlp
         df = df.drop(columns=["nlp"])
 
         df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person")  # entity "OfficeHolder" is quite nice, "Person" works as well
+        
+        print("aft ce, pre ts",df.head())
 
         df = NER.get_target_sentiments(df, model_size="sm")
 
         # TODO check ner_resolved
-        print(df.head())
+        print("aft ts",df.head())
 
         # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
         df_most_common = NER.sum_period_most_common_entities(df)
@@ -528,9 +550,12 @@ if __name__ == "__main__":
     if not os.path.isdir("src/logs"):
         os.mkdir("src/logs")
 
-    start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-    run_and_save(start_date, end_date, articles_per_period = 100, max_length = 300)
+    # TODO: dates 2019-11-06 and 2020-01-01 throw errors
+
+    start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
+    # end_date=datetime.strptime("2020-02-02", "%Y-%m-%d")
+    end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
+    run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500)
 
     """
     print("Loading Data...\t", str(datetime.now()))
