@@ -19,10 +19,10 @@ def load_data(folder_name):
         file_path = source_path + folder_name + "/" + file
 
         if(df is None):
-            df =  pd.read_csv(file_path, index_col=0)
+            df =  pd.read_csv(file_path)
         else:
-            df = pd.concat([df, pd.read_csv(file_path, index_col=0)])
+            df = pd.concat([df, pd.read_csv(file_path)])
 
 
-    return df.reset_index()
+    return df
 

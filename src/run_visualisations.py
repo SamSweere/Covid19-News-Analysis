@@ -87,7 +87,7 @@ def visualize(df_most_common, start_date, end_date, name_col, color_col):
         bar_chart_race.create_barchart_race(df_most_common, start_date, end_date, name_col, color_col)
 
 
-def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", with_sentiment=True):
+def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", sent_col="g_sent", with_sentiment=True):
         df_most_common = sum_period_most_common_entities(df_most_common, mc_column)
         df_most_common[mc_column].replace("None", np.NaN, inplace=True)
         df_most_common.dropna(subset=[mc_column], inplace=True)
@@ -106,6 +106,8 @@ def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", with
         # df_most_common.loc[df_most_common.publication_date=="2020-03-15", :].shape
         df_most_common = cum_sum_df(df_most_common, mc_column, mc_num_column)
         df_most_common = select_most_common_per_period(df_most_common)
+        df_most_common["rolling_sent"] = df_most_common[sent_col].rolling(5).mean()
+        df_most_common.dropna(subset=["rolling_sent"], inplace=True)
         return df_most_common
 
 
@@ -120,6 +122,7 @@ if __name__ == "__main__":
 
     # TODO load all dataframes for one experiment and concat them together
     df_most_common = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
-    df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", with_sentiment=True)
+    df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
+        sent_col="g_sent", with_sentiment=True)
     print(df_most_common.head())
-    visualize(df_most_common, start_date, end_date, "mc_p", "g_sent")
+    visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
