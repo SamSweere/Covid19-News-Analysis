@@ -22,9 +22,14 @@ from datetime import datetime, timedelta
 # # get dictionary about group memberships
 # group_lk = df.set_index('name')['group'].to_dict()
 
+def get_sent_color(x):
+    if x > 0:
+        return (1.-x, x, 1.-x)
+    else:
+        return (1, 1.+x, 1.+x)
 
 
-def draw_barchart(ax, df, date:int, date_column:str, name_column:str, group_column:str, value_column:str):
+def draw_barchart(ax, df, date, date_column:str, name_column:str, group_column:str, value_column:str, color_column:str):
     """ 
     @param df: dataframe to be used
     @param date: current date for which to display values
@@ -36,7 +41,9 @@ def draw_barchart(ax, df, date:int, date_column:str, name_column:str, group_colu
     dff = df[df[date_column].eq(date)].sort_values(by=value_column, ascending=True).tail(10)
     # re-define axis object
     ax.clear()
-    ax.barh(dff[name_column], dff[value_column]) # for groups only: , color=[colors[group_lk[x]] for x in dff[name_column]])
+    # TODO mix colors in RGB!
+    dff["color"] = dff[color_column].apply(get_sent_color)
+    ax.barh(dff[name_column], dff[value_column], color=dff["color"]) # for groups only: , color=[colors[group_lk[x]] for x in dff[name_column]])
     dx = dff[value_column].max() / 200
     # bar names
     for i, (value, name) in enumerate(zip(dff[value_column], dff[name_column])):
@@ -84,7 +91,8 @@ def create_barchart_race(df, start_date, end_date):
             date_column="publication_date",
             name_column="most_common_1",
             group_column=None,
-            value_column="most_common_1_num"
+            value_column="cum_sum",
+            color_column="t_sent"
         )
     fig, ax = plt.subplots(figsize=(15, 8))
 
