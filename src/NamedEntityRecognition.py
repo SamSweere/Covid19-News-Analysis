@@ -467,9 +467,14 @@ if __name__ == "__main__":
     # start_date=datetime.strptime("2019-11-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
 
-    # run_and_save(start_date, end_date, articles_per_period=None,
-    #      max_length=1000, with_sentiments=True, debug=False)
-
+    # run_and_save(start_date, end_date, articles_per_period=None,     # df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
+        
+        # df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
+        #         sent_col="mc_p_sent", with_sentiment=True)
+        # print(df_most_common.head())
+        # start_date = df_most_common.publication_date.min()
+        # end_date = df_most_common.publication_date.max()
+        # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
 
     start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")

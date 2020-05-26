@@ -79,7 +79,10 @@ def sum_period_most_common_entities(df, mc_column):
         @param visualization: create bar chart race
         """
         # sum up entities for each publication date
+        df['counts'] = 1
         df_gb = df.groupby(by=["publication_date", mc_column])
+        
+
         df_most_common = df_gb.agg(sum).reset_index()
         return df_most_common
 
@@ -125,14 +128,18 @@ def prepare_countries(df, mc_column="mc_c"):
         if "Unnamed: 0" in df.columns:
                 df.drop(columns=["Unnamed: 0"], inplace=True)
 
-        counts_df = df[mc_column].value_counts().rename_axis('country').reset_index(name='counts')
+        
+        df = df.groupby([mc_column]).sum().reset_index()
+
+        df = df[[mc_column, mc_column+"_sent", 'counts']]
+        # counts_df = df[mc_column].value_counts().rename_axis('country').reset_index(name='counts')
         # df[mc_columnt].groupby(mc_column)[mc_column].count()
-        print(counts_df)
+        # print(counts_df)
         
         # df["publication_date"] = df["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
         # df.sort_values(by=["publication_date"], ascending=False, inplace=True)
         # df.reset_index(drop=True, inplace=True)
-        return counts_df
+        return df
 
 if __name__ == "__main__":
 
@@ -143,7 +150,7 @@ if __name__ == "__main__":
         # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
 
         # -------  Country visualizer ------- 
-        df_most_common = get_viz_data.load_data("s_01_11_2019_e_05_04_2020_app_None_ml_1000_d_26_05_t_04_22")
+        df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
         
         df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
                 sent_col="mc_p_sent", with_sentiment=True)
@@ -155,7 +162,7 @@ if __name__ == "__main__":
 
 
         # # -------  Country visualizer ------- 
-        # df = get_viz_data.load_data("s_01_11_2019_e_05_04_2020_app_None_ml_1000_d_26_05_t_04_22")
+        # df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
         # c_list = prepare_countries(df, mc_column="mc_c")
 
         # world_map.show_world_map(c_list)
