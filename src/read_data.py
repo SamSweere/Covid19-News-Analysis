@@ -102,16 +102,16 @@ def get_representative_df(n_samples, start_date, end_date, max_length=None):
             d_o_p = datetime.strptime(t, "%Y-%m-%d")
             if d_o_p < start_date:
                 break
-            if len(line["body"]) > max_length:
-                # Crop the news message
-                line["body"] = line["body"][:max_length]
-            if (d_o_p > start_date) and (d_o_p < end_date):
+            if (d_o_p >= start_date) and (d_o_p <= end_date):
                 if counter == index_list[-1]:
                     index_list.pop()
                     date_of_publication.append(d_o_p)
+                    if len(line["body"]) > max_length:
+                        # Crop the news message
+                        line["body"] = line["body"][:max_length]
                     bodies.append(line["body"])
             
-            counter += 1
+                counter += 1
     
     df = pd.DataFrame({
         "body": bodies,
