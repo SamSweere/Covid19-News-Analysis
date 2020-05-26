@@ -180,15 +180,15 @@ if __name__ == "__main__":
         
         # -------  Entity visualizer ------- 
         
-        df_most_common = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
-                sent_col="mc_p_sent", with_sentiment=True)
-        print(df_most_common.head())
+        # df_most_common = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
+        #         sent_col="mc_p_sent", with_sentiment=True)
+        # print(df_most_common.head())
 
-        df_most_common["sent_bin"] = df_most_common["sent_norm"].apply(lambda x: 1 if x>0 else -1)
+        # df_most_common["sent_bin"] = df_most_common["sent_norm"].apply(lambda x: 1 if x>0 else -1)
 
-        start_date = df_most_common.publication_date.min()
-        end_date = df_most_common.publication_date.max()
-        visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
+        # start_date = df_most_common.publication_date.min()
+        # end_date = df_most_common.publication_date.max()
+        # visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
         
 
         # -------  Country visualizer ------- 
@@ -205,4 +205,5 @@ if __name__ == "__main__":
 
 
         # --- general sent
-        # prepare_sentiment(df, sent_column="g_sent")
+        df_sent = prepare_sentiment(df, sent_column="g_sent")
+        visualize_sent(df_sent, name="general")

@@ -18,11 +18,13 @@ def visualize_sent(df, name):
     
     df['dates'] = dates
 
-
-    p = sns.lmplot(x = 'dates', y = 'avg_sent', data=df)
+    p = sns.lmplot(x = 'dates', y = 'avg_sent', data=df, aspect=11.7/8.27)
     p.ax.xaxis.set_major_formatter(formatter)
     p.ax.xaxis.set_tick_params(rotation=30, labelsize=10)
 
-    # p.set_xlabels
+    p.set_xlabels("Date")
+    p.set_ylabels("Average Sentiment")
+
+    plt.savefig("figures/avg_sent_" + name + ".png", dpi=200)
     
     plt.show()
