@@ -3,7 +3,7 @@ sys.path.append("src/")
 import spacy
 from sklearn.decomposition import NMF
 import read_data
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import textacy.corpus
 from textacy.vsm import Vectorizer
@@ -16,14 +16,16 @@ import matplotlib.pyplot as plt
 import scipy
 import pandas as pd
 import unicodedata
+import time
+import shutil
 np.random.seed(0)
 
 
 # TODO should probably just inherit from model or something...
 class TopicAnalyser:
-    def __init__(self):
+    def __init__(self, n_topics):
         self.vectorizer = self.get_vectorizer()
-        self.topic_model = self.get_nmf_model()
+        self.topic_model = self.get_nmf_model(n_topics)
         self.graphicspath = "src/figures/"
         self.image_type = ".png"
 
@@ -54,14 +56,14 @@ class TopicAnalyser:
         )
         return vectorizer
 
-    def get_nmf_model(self):
+    def get_nmf_model(self, n_topics):
         # TODO how can we get this to converge?
-        model = textacy.tm.TopicModel("nmf", n_topics=9)
+        model = textacy.tm.TopicModel("nmf", n_topics=n_topics, max_iter=10000)
         return model
 
     def get_custom_stopwords(self):
         """ remove news outlet names and the like """
-        custom = ["say", "news", "reuters", "cbcca", "getty", "reuter"]
+        custom = ["say", "news", "reuters", "cbcca", "getty", "reuter", "get"]
         custom_stopwords = stopwords.words('english') + ["-PRON-"] + custom
         return custom_stopwords
 
@@ -85,7 +87,7 @@ class TopicAnalyser:
             for doc in df["nlp"]]
         if fit:
             self.vectorizer.fit(my_terms_list)
-        doc_term_matrix = self.vectorizer.fit_transform(my_terms_list)
+        doc_term_matrix = self.vectorizer.transform(my_terms_list)
         # print("Some Terms:")
         # print(self.vectorizer.terms_list[:10])
 
@@ -167,31 +169,74 @@ class TopicAnalyser:
         topic_df = pd.DataFrame(all_topics, columns=columns)
         return topic_df, topic_names
 
-    def get_topics_per_day(self, all_topics):
+    def get_topics_per_day(self, all_topics, topic_names):
         all_topics = all_topics.loc[:, ["publication_date", "topic_0"]]
         df_gb = all_topics.groupby(by=["publication_date", "topic_0"])
         res = (pd.DataFrame(df_gb["topic_0"].
-            agg(["sum", "mean"])).
+            agg(["sum"])).
             reset_index().
             rename({"topic_0": "main_topic"}, axis=1))
+
+        # this is assuming we do day by day
+        total_day = res.groupby(by=["publication_date"])["sum"].sum()[0]
+        res["mean"] = res["sum"]/total_day
         # set nicer topic names
         res["main_topic"] = res["main_topic"].replace(topic_names)
         # "+str(datetime.now())+"
         res.to_csv("src/TopicAnalysis/topic_frequency.csv", index=False)
         return res
 
-    # # Just in case we want to remove certain types of token
-    # def remove_tokens_on_match(self, doc):
-    #     indexes = []
-    #     for index, token in enumerate(doc):
-    #         # TODO we don't really need to filter for PUNCT, bc we already do regex
-    #         if (token.pos_  in ('PUNCT', "SPACE")):
-    #             indexes.append(index)
-    #     np_array = doc.to_array([LOWER, POS, ENT_TYPE, IS_ALPHA])
-    #     np_array = numpy.delete(np_array, indexes, axis = 0)
-    #     doc2 = Doc(doc.vocab, words=[t.text for i, t in enumerate(doc) if i not in indexes])
-    #     doc2.from_array([LOWER, POS, ENT_TYPE, IS_ALPHA], np_array)
-    #     return doc2
+def run_and_save(start_date, end_date, articles_per_period, max_length):
+    c_date = start_date
+
+    # Name 
+    # run_name = "s_" + start_date.strftime("%d_%m_%Y") + "_e_" \
+    #     + end_date.strftime("%d_%m_%Y") + "_app_" + str(articles_per_period) \
+    #     + "_ml_" + str(max_length) + "_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
+    # run_name = datetime.now().strftime("d_%d_%m_t_%H_%M")
+    run_name = "ta_run_" + datetime.now().strftime("d_%d_%m_t_%H_%M")
+    print(f"RUN NAME: {run_name}")
+
+    folder_path = "data/0TopicAnalysis/"+run_name
+    if os.path.isdir(folder_path):
+        shutil.rmtree(folder_path)
+    os.mkdir(folder_path)
+
+    print("Start run from date: " + start_date.strftime("%d_%m_%Y") + " to date: " + end_date.strftime("%d_%m_%Y"))
+    print("Articles per period: " + str(articles_per_period))
+    print("Max Length per article: " + str(max_length))
+
+    start_time = time.process_time()
+
+    # Increase until we hit the last day
+    while c_date < end_date:
+        print("Running day:",c_date.strftime("%d_%m_%Y"))
+        print("Loading Data...\t", str(datetime.now()))
+        df = read_data.get_body_df(
+            start_date=c_date,
+            end_date=c_date,
+            articles_per_period=articles_per_period, #700,
+            max_length=max_length
+        )
+
+        df = ta.apply_nlp(df)
+        doc_term_matrix = ta.get_doc_term_matrix(df)
+        doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix)
+        all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
+        ta.visualize("Find Topics", doc_term_matrix)
+        topics_per_day = ta.get_topics_per_day(all_topics, topic_names)
+        # print(topics_per_day)
+
+        file_name = c_date.strftime("%d_%m_%Y")
+        topics_per_day.to_csv(folder_path + "/" + file_name +".csv", index=False)
+
+            # Increase the day
+        c_date += timedelta(days=1)
+    
+    print("Multiple day run finished")
+    elapsed_time = time.process_time() - start_time
+    print("Time elapsed: " + str(round(elapsed_time,2)) + " seconds")
+    pass
 
 
 if __name__ == "__main__":
@@ -205,36 +250,24 @@ if __name__ == "__main__":
     if not os.path.isdir("../experiments"):
         os.mkdir("../experiments")
 
-    ta = TopicAnalyser()
-    start_date = datetime.strptime("2019-11-01", "%Y-%m-%d")
-    # start_date = datetime.strptime("2020-04-01", "%Y-%m-%d")
+    ta = TopicAnalyser(n_topics=10)
+    # start_date = datetime.strptime("2019-11-01", "%Y-%m-%d")
+    start_date = datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date = datetime.strptime("2020-04-06", "%Y-%m-%d")
 
     # # Pass with representative fitting data to find and name topics
-    # print("Loading Data...\t", str(datetime.now()))
-    # representative_df = read_data.get_representative_df(
-    #     n_samples=10000,
-    #     start_date=start_date,
-    #     end_date=end_date
-    # )
-    # representative_df = ta.apply_nlp(representative_df)
-    # rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
-    # rep_doc_topic_matrix = ta.get_doc_topic_matrix(rep_doc_term_matrix, fit=True)
-    # ta.visualize("Find Topics", rep_doc_term_matrix)
-
-    # Pass with specific data set
     print("Loading Data...\t", str(datetime.now()))
-    df = read_data.get_body_df(
+    representative_df = read_data.get_representative_df(
+        n_samples=1000,
         start_date=start_date,
-        end_date=end_date,
-        # articles_per_period=1000, #700,
-        # max_length=1000
+        end_date=end_date
     )
-    df = ta.apply_nlp(df)
-    doc_term_matrix = ta.get_doc_term_matrix(df)
-    doc_topic_matrix = ta.get_doc_topic_matrix(doc_term_matrix, fit=True)
-    all_topics, topic_names = ta.get_top_n_topics(df, doc_topic_matrix)
-    ta.visualize("Find Topics", doc_term_matrix)
-    topics_per_day = ta.get_topics_per_day(all_topics)
-    print(topics_per_day)
+    representative_df = ta.apply_nlp(representative_df)
+    rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
+    rep_doc_topic_matrix = ta.get_doc_topic_matrix(rep_doc_term_matrix, fit=True)
+    ta.visualize("Find Topics", rep_doc_term_matrix)
+    print("Found our topics...\t", str(datetime.now()))
 
+    # Run day by day
+    run_and_save(start_date, end_date, articles_per_period=None,
+        max_length=1000)
