@@ -143,7 +143,7 @@ if __name__ == "__main__":
         # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
 
         # -------  Country visualizer ------- 
-        df_most_common = get_viz_data.load_data("s_01_11_2019_e_05_04_2020_app_None_ml_1000_d_26_05_t_04_22")
+        df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
         
         df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
                 sent_col="mc_p_sent", with_sentiment=True)

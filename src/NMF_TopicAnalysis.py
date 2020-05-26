@@ -254,7 +254,7 @@ if __name__ == "__main__":
         os.mkdir("../experiments")
 
     ta = TopicAnalyser(n_topics=10)
-    start_date = datetime.strptime("2019-11-01", "%Y-%m-%d")
+    start_date = datetime.strptime("2020-02-01", "%Y-%m-%d")
     # start_date = datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date = datetime.strptime("2020-04-06", "%Y-%m-%d")
 
