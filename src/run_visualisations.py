@@ -112,6 +112,18 @@ def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", sent
         # df_most_common.loc[df_most_common.publication_date=="2020-03-15", :].shape
         df_most_common = cum_sum_df(df_most_common, mc_column, mc_num_column)
         df_most_common = select_most_common_per_period(df_most_common)
+        
+        #### HOT FIX: remove Nicola Tesla, Cain and Abel
+        if sent_col == "mc_p_sent":
+                mask = df_most_common.mc_p.apply(lambda x: x not in ["Nikola Tesla", "Cain and Abel"])
+                df_most_common = df_most_common[mask]
+        # df_most_common[sent_col] = (df_most_common[sent_col] + 1)**2
+        temp = df_most_common[sent_col] - df_most_common[sent_col].mean()
+        sent_range = df_most_common[sent_col].max() - df_most_common[sent_col].min()
+        df_most_common["sent_norm"] = temp/sent_range
+        df_most_common["rolling_sent_norm"] = df_most_common["sent_norm"].rolling(3).mean()
+        ###
+
         df_most_common["rolling_sent"] = df_most_common[sent_col].rolling(5).mean()
         df_most_common.dropna(subset=["rolling_sent"], inplace=True)
         return df_most_common
@@ -135,7 +147,7 @@ def prepare_countries(df, mc_column="mc_c"):
         df = df[[mc_column, mc_column+"_sent", 'counts']]
         # counts_df = df[mc_column].value_counts().rename_axis('country').reset_index(name='counts')
         # df[mc_columnt].groupby(mc_column)[mc_column].count()
-        # print(counts_df)
+        # print(counts_df) 
         
         # df["publication_date"] = df["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
         # df.sort_values(by=["publication_date"], ascending=False, inplace=True)
@@ -166,7 +178,18 @@ if __name__ == "__main__":
         # end_date = df_country.publication_date.max()
         # visualize(df_country, start_date, end_date, "mc_p", "rolling_sent")
         
+        # -------  Entity visualizer ------- 
+        
+        df_most_common = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
+                sent_col="mc_p_sent", with_sentiment=True)
+        print(df_most_common.head())
 
+        df_most_common["sent_bin"] = df_most_common["sent_norm"].apply(lambda x: 1 if x>0 else -1)
+
+        start_date = df_most_common.publication_date.min()
+        end_date = df_most_common.publication_date.max()
+        visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
+        
 
         # -------  Country visualizer ------- 
         
