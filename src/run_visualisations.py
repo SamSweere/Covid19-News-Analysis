@@ -111,6 +111,18 @@ def prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num", sent
         # df_most_common.loc[df_most_common.publication_date=="2020-03-15", :].shape
         df_most_common = cum_sum_df(df_most_common, mc_column, mc_num_column)
         df_most_common = select_most_common_per_period(df_most_common)
+        
+        #### HOT FIX: remove Nicola Tesla, Cain and Abel
+        if sent_col == "mc_p_sent":
+                mask = df_most_common.mc_p.apply(lambda x: x not in ["Nikola Tesla", "Cain and Abel"])
+                df_most_common = df_most_common[mask]
+        # df_most_common[sent_col] = (df_most_common[sent_col] + 1)**2
+        temp = df_most_common[sent_col] - df_most_common[sent_col].mean()
+        sent_range = df_most_common[sent_col].max() - df_most_common[sent_col].min()
+        df_most_common["sent_norm"] = temp/sent_range
+        df_most_common["rolling_sent_norm"] = df_most_common["sent_norm"].rolling(3).mean()
+        ###
+
         df_most_common["rolling_sent"] = df_most_common[sent_col].rolling(5).mean()
         df_most_common.dropna(subset=["rolling_sent"], inplace=True)
         return df_most_common
@@ -134,7 +146,7 @@ def prepare_countries(df, mc_column="mc_c"):
         df = df[[mc_column, mc_column+"_sent", 'counts']]
         # counts_df = df[mc_column].value_counts().rename_axis('country').reset_index(name='counts')
         # df[mc_columnt].groupby(mc_column)[mc_column].count()
-        # print(counts_df)
+        # print(counts_df) 
         
         # df["publication_date"] = df["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
         # df.sort_values(by=["publication_date"], ascending=False, inplace=True)
@@ -143,33 +155,22 @@ def prepare_countries(df, mc_column="mc_c"):
 
 if __name__ == "__main__":
 
-        # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-        # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-        # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
-
-        # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
-
         # -------  Entity visualizer ------- 
         df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
         
         df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
                 sent_col="mc_p_sent", with_sentiment=True)
         print(df_most_common.head())
+
+        df_most_common["sent_bin"] = df_most_common["sent_norm"].apply(lambda x: 1 if x>0 else -1)
+
         start_date = df_most_common.publication_date.min()
         end_date = df_most_common.publication_date.max()
-
-        # hot fix: remove Nicola Tesla, Cain and Abel
-        mask = df_most_common.mc_p.apply(lambda x: x not in ["Nikola Tesla", "Cain and Abel"])
-        df = df_most_common[mask]
-        a = (df.rolling_sent - df.rolling_sent.mean())
-        sent_range = df.rolling_sent_norm.max() - df.rolling_sent_norm.min()
-        df["rolling_sent_norm"] = a/sent_range
-        visualize(df, start_date, end_date, "mc_p", "rolling_sent_norm")
+        visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
         
 
-
         # -------  Country visualizer ------- 
-        df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
-        c_list = prepare_countries(df, mc_column="mc_c")
+        # df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
+        # c_list = prepare_countries(df, mc_column="mc_c")
 
-        world_map.show_world_map(c_list)
+        # world_map.show_world_map(c_list)

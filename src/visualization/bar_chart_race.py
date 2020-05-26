@@ -13,6 +13,10 @@ def get_sent_color(x):
         return (1-x, 1, 1-x)
     else:
         return (1, 1+x, 1+x)
+    # if x > 0:
+    #     return (0, x, 1-x)
+    # else:
+    #     return (-x, 0., 1+x)
 
 
 def draw_barchart(ax, df, date, date_column:str, name_column:str, group_column:str, value_column:str, color_column:str):
@@ -28,8 +32,11 @@ def draw_barchart(ax, df, date, date_column:str, name_column:str, group_column:s
     # re-define axis object
     ax.clear()
     # TODO mix colors in RGB!
-    dff["color"] = dff[color_column].apply(get_sent_color)
-    ax.barh(dff[name_column], dff[value_column], color=dff["color"]) # for groups only: , color=[colors[group_lk[x]] for x in dff[name_column]])
+    if not (color_column is None):
+        dff["color"] = dff[color_column].apply(get_sent_color)
+        ax.barh(dff[name_column], dff[value_column], color=dff["color"]) # for groups only: , color=[colors[group_lk[x]] for x in dff[name_column]])
+    else:
+        ax.barh(dff[name_column], dff[value_column])
     dx = dff[value_column].max() / 200
     # bar names
     for i, (value, name) in enumerate(zip(dff[value_column], dff[name_column])):
