@@ -10,3 +10,4 @@ textacy==0.9.1
 nltk==3.5
 plotly
 country-converter
+psutil

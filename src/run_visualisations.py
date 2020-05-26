@@ -150,19 +150,19 @@ if __name__ == "__main__":
         # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
 
         # -------  Country visualizer ------- 
-        df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
+        # df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
         
-        df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
-                sent_col="mc_p_sent", with_sentiment=True)
-        print(df_most_common.head())
-        start_date = df_most_common.publication_date.min()
-        end_date = df_most_common.publication_date.max()
-        visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
+        # df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
+        #         sent_col="mc_p_sent", with_sentiment=True)
+        # print(df_most_common.head())
+        # start_date = df_most_common.publication_date.min()
+        # end_date = df_most_common.publication_date.max()
+        # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
         
 
 
-        # # -------  Country visualizer ------- 
-        # df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
-        # c_list = prepare_countries(df, mc_column="mc_c")
+        # -------  Country visualizer ------- 
+        df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
+        c_list = prepare_countries(df, mc_column="mc_c")
 
-        # world_map.show_world_map(c_list)
+        world_map.show_world_map(c_list)

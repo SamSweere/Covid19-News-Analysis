@@ -1,4 +1,5 @@
 import plotly.graph_objects as go
+import plotly.express as px
 import pandas as pd
 import country_converter as coco
 
@@ -54,8 +55,9 @@ def show_world_map(df):
             showarrow = False
         )]
     )
-
+    fig.write_image("figures/worldmap_counts.png")
     fig.show()
+    
 
 
     # -- Sentiment counts ------
