@@ -5,6 +5,8 @@ from copy import deepcopy
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.dates import (YEARLY, DateFormatter,
+                              rrulewrapper, RRuleLocator, drange)
 np.random.seed(0)
 
 
@@ -126,46 +128,61 @@ def get_representative_df(n_samples, start_date, end_date, max_length=None):
     return df
 
 if __name__ == "__main__":
-    # TODO count articles per day
-    date_of_publication = []
-    counts = []
-    n_chars = []
-    prev_dop = None
-    count = 0
-    n_char = 0
-    with jsonlines.open("data/aylien-covid-news.jsonl") as f:
-        for line in f:
-            t = line["published_at"].split(" ")[0]
-            d_o_p = datetime.strptime(t, "%Y-%m-%d")
-            if prev_dop is None:
-                prev_dop = d_o_p
-                count = 1
-                n_char = len(line["body"])
-            elif prev_dop != d_o_p:
-                date_of_publication.append(prev_dop)
-                counts.append(count)
-                n_chars.append(n_char)
-                prev_dop = d_o_p
-                count = 1
-                n_char = len(line["body"])
-            else:
-                count += 1
-                n_char += len(line["body"])
-    df = pd.DataFrame({
-        "publication_date": date_of_publication,
-        "num_articles": count,
-        "num_characters": n_chars
-    })
-    df.to_csv("data/df_counts.csv", index=False)
+    # # TODO count articles per day
+    # date_of_publication = []
+    # all_counts = []
+    # all_n_char = []
+    # prev_dop = None
+    # count = 0
+    # n_char = 0
+    # with jsonlines.open("data/aylien-covid-news.jsonl") as f:
+    #     for line in f:
+    #         t = line["published_at"].split(" ")[0]
+    #         d_o_p = datetime.strptime(t, "%Y-%m-%d")
+    #         if prev_dop is None:
+    #             prev_dop = d_o_p
+    #             count = 1
+    #             n_char = len(line["body"])
+    #         elif prev_dop != d_o_p:
+    #             date_of_publication.append(prev_dop)
+    #             all_counts.append(count)
+    #             all_n_char.append(n_char)
+    #             prev_dop = d_o_p
+    #             count = 1
+    #             n_char = len(line["body"])
+    #         else:
+    #             count += 1
+    #             n_char += len(line["body"])
+    # df = pd.DataFrame({
+    #     "publication_date": date_of_publication,
+    #     "num_articles": all_counts,
+    #     "num_characters": all_n_char
+    # })
+    # df.to_csv("data/df_counts.csv", index=False)
+
 
     df = pd.read_csv("data/df_counts.csv")
+    df["publication_date"] = df["publication_date"].apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
+    df['dates'] = df.publication_date.apply(lambda x: float(x.toordinal()))
 
-    sns.barplot(data=df, x="publication_date", y="num_articles")
-    plt.show()
+    # p = sns.barplot(data=df, x="dates", y="num_articles")
+
+    # formatter = DateFormatter('%d-%m-%y')
+    # p.xaxis.set_major_formatter(formatter)
+    # p.xaxis.set_tick_params(rotation=30, labelsize=10)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m'))
+    ax.bar(df["dates"], df['num_articles'], width=25, align='center')
+    plt.title("Number of articles per day")
     plt.savefig("src/figures/articles_per_day.png", dpi=500)
-
-    sns.barplot(data=df, x="publication_date", y="num_characters")
     plt.show()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.xaxis.set_major_formatter(DateFormatter('%Y-%m'))
+    ax.bar(df["dates"], df['num_characters'], width=25, align='center')
+    plt.title("Number of characters per day")
     plt.savefig("src/figures/characters_per_day.png", dpi=500)
+    plt.show()
 
     pass

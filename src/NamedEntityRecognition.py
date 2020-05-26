@@ -480,7 +480,7 @@ if __name__ == "__main__":
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
 
     run_and_save(start_date, end_date, articles_per_period=1000,
-         max_length=500, with_sentiments=True, debug=False, delta_d=5)
+         max_length=500, with_sentiments=True, debug=True, delta_d=5)
     
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
