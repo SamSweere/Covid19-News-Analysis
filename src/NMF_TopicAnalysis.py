@@ -218,6 +218,9 @@ def run_and_save(start_date, end_date, articles_per_period, max_length):
             articles_per_period=articles_per_period, #700,
             max_length=max_length
         )
+        if df.shape[0] == 0:
+            c_date += timedelta(days=1)
+            continue
 
         df = ta.apply_nlp(df)
         doc_term_matrix = ta.get_doc_term_matrix(df)
@@ -258,11 +261,10 @@ if __name__ == "__main__":
     # # Pass with representative fitting data to find and name topics
     print("Loading Data...\t", str(datetime.now()))
     representative_df = read_data.get_representative_df(
-        n_samples=15000,
+        n_samples=20000,
         start_date=start_date,
         end_date=end_date,
-        # TODO
-        max_length=1000
+        max_length=2000
     )
     representative_df = ta.apply_nlp(representative_df)
     rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
