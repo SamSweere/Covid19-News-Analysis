@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 from copy import deepcopy
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 np.random.seed(0)
 
 
@@ -122,3 +124,48 @@ def get_representative_df(n_samples, start_date, end_date, max_length=None):
     # take top n
     # get representative sample
     return df
+
+if __name__ == "__main__":
+    # TODO count articles per day
+    date_of_publication = []
+    counts = []
+    n_chars = []
+    prev_dop = None
+    count = 0
+    n_char = 0
+    with jsonlines.open("data/aylien-covid-news.jsonl") as f:
+        for line in f:
+            t = line["published_at"].split(" ")[0]
+            d_o_p = datetime.strptime(t, "%Y-%m-%d")
+            if prev_dop is None:
+                prev_dop = d_o_p
+                count = 1
+                n_char = len(line["body"])
+            elif prev_dop != d_o_p:
+                date_of_publication.append(prev_dop)
+                counts.append(count)
+                n_chars.append(n_char)
+                prev_dop = d_o_p
+                count = 1
+                n_char = len(line["body"])
+            else:
+                count += 1
+                n_char += len(line["body"])
+    df = pd.DataFrame({
+        "publication_date": date_of_publication,
+        "num_articles": count,
+        "num_characters": n_chars
+    })
+    df.to_csv("data/df_counts.csv", index=False)
+
+    df = pd.read_csv("data/df_counts.csv")
+
+    sns.barplot(data=df, x="publication_date", y="num_articles")
+    plt.show()
+    plt.savefig("src/figures/articles_per_day.png", dpi=500)
+
+    sns.barplot(data=df, x="publication_date", y="num_characters")
+    plt.show()
+    plt.savefig("src/figures/characters_per_day.png", dpi=500)
+
+    pass
