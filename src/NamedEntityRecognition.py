@@ -224,16 +224,16 @@ class NamedEntityRecognizer:
             for sentence in sentences:
                 sentiment_tulp = self.tsa.get_sentiment(sentence = str(sentence), target = str(target)) # Convert them to strings
                 # The tuple contains (sentiment, sentence trimmed)
-                c_sentence_count += 1 #The sentence contains the target word
-                if(sentiment_tulp[1]):
-                    # The sentence was trimmed
-                    trim_count += 1
-
                 sentiment = sentiment_tulp[0]
                 if(sentiment is None):
                     # Nothing found in this sentence
                     continue
                 else:
+                    c_sentence_count += 1 #The sentence contains the target word
+                    if(sentiment_tulp[1]):
+                        # The sentence was trimmed
+                        trim_count += 1
+
                     sentiment_sum += sentiment
                     count += 1
 
@@ -274,17 +274,18 @@ class NamedEntityRecognizer:
                             # get the sentiment of the target word
                             sentiment_tulp = self.tsa.get_sentiment(sentence = str(sentence), target = str(tt)) # Convert them to strings
                             # The tuple contains (sentiment, sentence trimmed)
-                            c_sentence_count += 1 #The sentence contains the target word
-                            if(sentiment_tulp[1]):
-                                # The sentence was trimmed
-                                trim_count += 1
-                            
+                             
                             sentiment = sentiment_tulp[0]
                             
                             if(sentiment is None):
                                 # Nothing found in this sentence
                                 continue
                             else:
+                                c_sentence_count += 1 #The sentence contains the target word
+                                if(sentiment_tulp[1]):
+                                    # The sentence was trimmed
+                                    trim_count += 1
+
                                 sentiment_sum += sentiment
                                 count += 1
                             
@@ -358,60 +359,66 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
 
     start_time = time.process_time()
 
-    NER = NamedEntityRecognizer(model_size="sm")  # model_size="lg")
+    NER = NamedEntityRecognizer(model_size="sm", with_sentiment=with_sentiments)  # model_size="lg")
 
     # Increase until we hit the last day
     while(c_date != end_date + timedelta(days=1)):
-        print("Running day:",c_date.strftime("%d_%m_%Y"))
-        print("Loading Data...\t", str(datetime.now()))
-        if not debug:
-            df = read_data.get_body_df(
-                start_date=c_date,
-                end_date=c_date,
-                articles_per_period=articles_per_period, #700,
-                max_length=max_length
-            )
+        try:
 
-        if debug:
-            df = pd.DataFrame({
-                "body": ["Deepika has a dog. She loves him. The movie star has always been fond of animals",
-                "The short guy Donald Trump is the worst. He does not know how the world turns.",
-                "The tall guy Donald Trump is the best.",
-                "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811. Public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
-                "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease, there were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
-                "Coronavirus disease 2019 (COVID-19) is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2).[10] It was first identified in December 2019 in Wuhan, China, and has since spread globally, resulting in an ongoing pandemic.[11][12] As of 24 May 2020, more than 5.35 million cases have been reported across 188 countries and territories, resulting in more than 343,000 deaths. More than 2.14 million people have recovered."],
-                
-                "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
-            })
+            print("Running day:",c_date.strftime("%d_%m_%Y"))
+            print("Loading Data...\t", str(datetime.now()))
+            if not debug:
+                df = read_data.get_body_df(
+                    start_date=c_date,
+                    end_date=c_date,
+                    articles_per_period=articles_per_period, #700,
+                    max_length=max_length
+                )
 
-        df = NER.spacy_preprocessing(df) # model_size="lg")
-        if with_sentiments:
-            df = NER.get_general_sentiment(df)
-        df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
-        df = NER.dbpedia_ner(df) #model_size="lg")
-        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
-        df.drop(columns=["nlp"], inplace=True)
-        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
-        
-        if with_sentiments:
-            df = NER.get_target_sentiments(df, targets = ["mc_p","mc_c"])
-            df.drop(columns=["sents"], inplace=True)
+            if debug:
+                df = pd.DataFrame({
+                    "body": ["Deepika has a dog. She loves him. The movie star has always been fond of animals",
+                    "The short guy Donald Trump is the worst. He does not know how the world turns.",
+                    "The tall guy Donald Trump is the best.",
+                    "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811. Public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
+                    "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease, there were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
+                    "Coronavirus disease 2019 (COVID-19) is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2).[10] It was first identified in December 2019 in Wuhan, China, and has since spread globally, resulting in an ongoing pandemic.[11][12] As of 24 May 2020, more than 5.35 million cases have been reported across 188 countries and territories, resulting in more than 343,000 deaths. More than 2.14 million people have recovered."],
+                    
+                    "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
+                })
 
-        # print(df.to_string())
+            df = NER.spacy_preprocessing(df) # model_size="lg")
+            if with_sentiments:
+                df = NER.get_general_sentiment(df)
+            df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
+            df = NER.dbpedia_ner(df) #model_size="lg")
+            df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
+            df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
 
-        df.drop(columns=["nlp_resolved","ner_resolved"], inplace=True)
-        # TODO check ner_resolved
-        # print("aft ts",df.head())
-        
+            df.drop(columns=["nlp"], inplace=True)
 
-        # # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
-        # df_most_common = NER.sum_period_most_common_entities(df)
-        # print(df_most_common.head())
+            if with_sentiments:
+                df = NER.get_target_sentiments(df, targets = ["mc_p","mc_c"])
+                df.drop(columns=["sents"], inplace=True)
+
+            # print(df.to_string())
+
+            df.drop(columns=["nlp_resolved","ner_resolved"], inplace=True)
+            # TODO check ner_resolved
+            # print("aft ts",df.head())
+            
+
+            # # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
+            # df_most_common = NER.sum_period_most_common_entities(df)
+            # print(df_most_common.head())
 
 
-        print(df.head())
-        file_name = c_date.strftime("%d_%m_%Y")
-        df.to_csv(folder_path + "/" + file_name +".csv", index=False)
+            print(df.head())
+            file_name = c_date.strftime("%d_%m_%Y")
+            df.to_csv(folder_path + "/" + file_name +".csv", index=False)
+        except:
+            print("Failed to do:",c_date.strftime("%d_%m_%Y"))
+            print("Moving on")
 
         # Increase the day
         c_date += timedelta(days=1)
@@ -431,12 +438,19 @@ if __name__ == "__main__":
         os.mkdir("src/logs")
 
     # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
+    start_date=datetime.strptime("2019-11-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
+
+    run_and_save(start_date, end_date, articles_per_period=None,
+         max_length=1000, with_sentiments=True, debug=False)
+
+
+    # start_date=datetime.strptime("2020-04-03", "%Y-%m-%d")
+    # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
+
+    # run_and_save(start_date, end_date, articles_per_period=10,
+    #      max_length=300, with_sentiments=True, debug=False)
     
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
-    run_and_save(start_date, end_date, articles_per_period=100,
-         max_length=300, with_sentiments=False, debug=False)
-
 

@@ -84,8 +84,9 @@ class TargetSentimentAnalyzer:
 
         # set your trained models here
         state_dict_paths = {
+            'lcf_bert': 'models/lcf_bert_combined_val_acc0.7563',
             # 'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7283',
-            'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7225',
+            # 'lcf_bert': 'models/lcf_bert_twitter_val_acc0.7225',
             # 'bert_spc': 'state_dict/bert_spc_laptop_val_acc0.268',
             # 'aen_bert': 'state_dict/aen_bert_laptop_val_acc0.2006'
         }
@@ -176,10 +177,13 @@ class TargetSentimentAnalyzer:
         outputs = self.model(inputs)
         t_probs = F.softmax(outputs, dim=-1).cpu().numpy()
         # print('t_probs = ', t_probs)
-        sentiment = t_probs.argmax(axis=-1) - 1
+        # sentiment = t_probs.argmax(axis=-1)[0] - 1
         # print('aspect sentiment = ', sentiment)
 
         # print(sentiment[0])
 
-        return (sentiment[0], sentence_too_long)
+        sentiment = round(-1*t_probs[0][0]+0*t_probs[0][1] + 1*t_probs[0][2],2)
+        # print(t_probs, sentiment)
+
+        return (sentiment, sentence_too_long)
     

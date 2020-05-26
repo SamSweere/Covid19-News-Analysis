@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
 
         # -------  Country visualizer ------- 
-        df = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
+        df = get_viz_data.load_data("s_03_04_2020_e_05_04_2020_app_100_ml_300_d_26_05_t_03_24")
         c_list = prepare_countries(df, mc_column="mc_c")
 
         world_map.show_world_map(c_list)

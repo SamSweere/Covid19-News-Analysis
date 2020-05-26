@@ -44,7 +44,9 @@ def filter_articles(n_articles=None, source_name=None, start_date=None, end_date
                 if end_date < d_o_p:
                     continue
             if len(line["body"]) > max_length:
-                continue
+                # Crop the news message
+                line["body"] = line["body"][:max_length]
+                # continue
             articles.append(line)
             date_of_publication.append(deepcopy(d_o_p))
             counter += 1
