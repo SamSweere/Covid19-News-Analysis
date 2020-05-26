@@ -366,85 +366,85 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
 
     # Increase until we hit the last day
     while(c_date <= end_date):
-        # try:
+        try:
 
-        print("Running day: " + str(c_date.strftime("%d_%m_%Y")) + " till " + str((c_date + timedelta(days=delta_d)).strftime("%d_%m_%Y")))
-        print("Loading Data...\t", str(datetime.now()))
-        if not debug:
-            # df = read_data.get_body_df(
-            #     start_date=c_date,
-            #     end_date=c_date,
-            #     articles_per_period=articles_per_period, #700,
-            #     max_length=max_length
-            # )
-            df = read_data.get_representative_df(
-                start_date=c_date,
-                end_date=c_date+timedelta(days=delta_d),
-                max_length=max_length,
-                n_samples = articles_per_period*delta_d
-            )
+            print("Running day: " + str(c_date.strftime("%d_%m_%Y")) + " till " + str((c_date + timedelta(days=delta_d)).strftime("%d_%m_%Y")))
+            print("Loading Data...\t", str(datetime.now()))
+            if not debug:
+                # df = read_data.get_body_df(
+                #     start_date=c_date,
+                #     end_date=c_date,
+                #     articles_per_period=articles_per_period, #700,
+                #     max_length=max_length
+                # )
+                df = read_data.get_representative_df(
+                    start_date=c_date,
+                    end_date=c_date+timedelta(days=delta_d),
+                    max_length=max_length,
+                    n_samples = articles_per_period*delta_d
+                )
 
-        if debug:
+            if debug:
 
-            df = pd.DataFrame({
-                "body": [
-                "New Zealand's two top public health bosses will be addressing New Zealand's to update New Zealand's on the latest Covid-19 developments. Director of Public Health Dr Caroline McElnay will join Director-General of Health Ashley Bloomfield..."],
-                "publication_date": ["2020-04-05"]
-            })
-            # df = pd.DataFrame({
-            #     "body": [
-            #     "New Zealand's two top public health bosses will be addressing New Zealand's to update New Zealand's on the latest Covid-19 developments. Director of Public Health Dr Caroline McElnay will join Director-General of Health Ashley Bloomfield...",
-            #     "Deepika has a dog. She loves him. The movie star has always been fond of animals",
-            #     "The short guy Donald Trump is the worst. He does not know how the world turns.",
-            #     "The tall guy Donald Trump is the best.",
-            #     "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811. Public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
-            #     "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease, there were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
-            #     "Coronavirus disease 2019 (COVID-19) is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2).[10] It was first identified in December 2019 in Wuhan, China, and has since spread globally, resulting in an ongoing pandemic.[11][12] As of 24 May 2020, more than 5.35 million cases have been reported across 188 countries and territories, resulting in more than 343,000 deaths. More than 2.14 million people have recovered."],
-                
-            #     "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
-            # })
+                df = pd.DataFrame({
+                    "body": [
+                    "New Zealand's two top public health bosses will be addressing New Zealand's to update New Zealand's on the latest Covid-19 developments. Director of Public Health Dr Caroline McElnay will join Director-General of Health Ashley Bloomfield..."],
+                    "publication_date": ["2020-04-05"]
+                })
+                # df = pd.DataFrame({
+                #     "body": [
+                #     "New Zealand's two top public health bosses will be addressing New Zealand's to update New Zealand's on the latest Covid-19 developments. Director of Public Health Dr Caroline McElnay will join Director-General of Health Ashley Bloomfield...",
+                #     "Deepika has a dog. She loves him. The movie star has always been fond of animals",
+                #     "The short guy Donald Trump is the worst. He does not know how the world turns.",
+                #     "The tall guy Donald Trump is the best.",
+                #     "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811. Public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
+                #     "There were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease, there were 23 more deaths linked to Covid-19 in the Netherlands, raising the total number of people who died in the country to 5,811 public health agency RIVM said it also knew of another ten hospitalizations for the coronavirus disease.",
+                #     "Coronavirus disease 2019 (COVID-19) is an infectious disease caused by severe acute respiratory syndrome coronavirus 2 (SARS-CoV-2).[10] It was first identified in December 2019 in Wuhan, China, and has since spread globally, resulting in an ongoing pandemic.[11][12] As of 24 May 2020, more than 5.35 million cases have been reported across 188 countries and territories, resulting in more than 343,000 deaths. More than 2.14 million people have recovered."],
+                    
+                #     "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
+                # })
 
-        df = NER.spacy_preprocessing(df) # model_size="lg")
-        if with_sentiments:
-            df = NER.get_general_sentiment(df)
-        df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
-        df = NER.dbpedia_ner(df) #model_size="lg")
-        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
-        df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
+            df = NER.spacy_preprocessing(df) # model_size="lg")
+            if with_sentiments:
+                df = NER.get_general_sentiment(df)
+            df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
+            df = NER.dbpedia_ner(df) #model_size="lg")
+            df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
+            df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
 
-        df.drop(columns=["nlp"], inplace=True)
+            df.drop(columns=["nlp"], inplace=True)
 
-        if with_sentiments:
-            targets = ["mc_p","mc_c"]
-            df = NER.get_target_sentiments(df, targets = targets)
+            if with_sentiments:
+                targets = ["mc_p","mc_c"]
+                df = NER.get_target_sentiments(df, targets = targets)
 
-            for target in targets:
-                df.drop(columns=["sents_"+target], inplace=True)
-                df.drop(columns=["ner_resolved_"+target], inplace=True)
+                for target in targets:
+                    df.drop(columns=["sents_"+target], inplace=True)
+                    df.drop(columns=["ner_resolved_"+target], inplace=True)
 
-        # print(df.to_string())
-        df.drop(columns=["nlp_resolved"], inplace=True) # Drop some columns to make some space
-
-
-        # df.drop(columns=["nlp_resolved","ner_resolved"], inplace=True)
-        # TODO check ner_resolved
-        # print("aft ts",df.head())
-        
-
-        # # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
-        # df_most_common = NER.sum_period_most_common_entities(df)
-        # print(df_most_common.head())
+            # print(df.to_string())
+            df.drop(columns=["nlp_resolved"], inplace=True) # Drop some columns to make some space
 
 
-        print(df.head())
-        if(delta_d == 1):
-            file_name = c_date.strftime("%d_%m_%Y")
-        else:
-            file_name = c_date.strftime("%d_%m_%Y") + "_to_" +  (c_date + timedelta(days=delta_d)).strftime("%d_%m_%Y")
-        df.to_csv(folder_path + "/" + file_name +".csv", index=False)
-        # except:
-        #     print("Failed to do:",c_date.strftime("%d_%m_%Y"))
-        #     print("Moving on")
+            # df.drop(columns=["nlp_resolved","ner_resolved"], inplace=True)
+            # TODO check ner_resolved
+            # print("aft ts",df.head())
+            
+
+            # # df = df[["publication_date", "most_common_1", "most_common_1_num", "t_sent", "c_sent"]]
+            # df_most_common = NER.sum_period_most_common_entities(df)
+            # print(df_most_common.head())
+
+
+            print(df.head())
+            if(delta_d == 1):
+                file_name = c_date.strftime("%d_%m_%Y")
+            else:
+                file_name = c_date.strftime("%d_%m_%Y") + "_to_" +  (c_date + timedelta(days=delta_d)).strftime("%d_%m_%Y")
+            df.to_csv(folder_path + "/" + file_name +".csv", index=False)
+        except:
+            print("Failed to do:",c_date.strftime("%d_%m_%Y"))
+            print("Moving on")
 
         # Increase the day
         c_date += timedelta(days=delta_d)
@@ -480,7 +480,7 @@ if __name__ == "__main__":
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
 
     run_and_save(start_date, end_date, articles_per_period=1000,
-         max_length=500, with_sentiments=True, debug=False, delta_d=5)
+         max_length=500, with_sentiments=True, debug=True, delta_d=1)
     
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
