@@ -154,6 +154,7 @@ class NamedEntityRecognizer:
                         # in case there is whitespace before next token, subtract
                         if article.text[article[x.end].idx-1] == " ":
                             surface_form_end -= 1
+                    # TODO: possible bug here. If we have two candidates with the same names we for some reason do not replace them correcly
                     np.put(replacement_candidate, range(surface_form_start, surface_form_end), ent_index)
             
             if len(entity_counts) == 0:
