@@ -63,7 +63,7 @@ class TopicAnalyser:
 
     def get_custom_stopwords(self):
         """ remove news outlet names and the like """
-        custom = ["say", "news", "reuters", "cbcca", "getty", "reuter", "get"]
+        custom = ["say", "news", "reuters", "cbcca", "getty", "reuter", "get", "am", "pm", "et", "go", "like"]
         custom_stopwords = stopwords.words('english') + ["-PRON-"] + custom
         return custom_stopwords
 
@@ -251,16 +251,18 @@ if __name__ == "__main__":
         os.mkdir("../experiments")
 
     ta = TopicAnalyser(n_topics=10)
-    # start_date = datetime.strptime("2019-11-01", "%Y-%m-%d")
-    start_date = datetime.strptime("2020-04-01", "%Y-%m-%d")
+    start_date = datetime.strptime("2019-11-01", "%Y-%m-%d")
+    # start_date = datetime.strptime("2020-04-01", "%Y-%m-%d")
     end_date = datetime.strptime("2020-04-06", "%Y-%m-%d")
 
     # # Pass with representative fitting data to find and name topics
     print("Loading Data...\t", str(datetime.now()))
     representative_df = read_data.get_representative_df(
-        n_samples=1000,
+        n_samples=15000,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        # TODO
+        max_length=1000
     )
     representative_df = ta.apply_nlp(representative_df)
     rep_doc_term_matrix = ta.get_doc_term_matrix(representative_df, fit=True)
@@ -269,5 +271,6 @@ if __name__ == "__main__":
     print("Found our topics...\t", str(datetime.now()))
 
     # Run day by day
-    run_and_save(start_date, end_date, articles_per_period=None,
+    run_and_save(start_date, end_date, articles_per_period=1000,
         max_length=1000)
+        

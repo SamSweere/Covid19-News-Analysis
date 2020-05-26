@@ -6,7 +6,7 @@ library(tidyverse)
 library(htmlwidgets)
 
 # TODO load all the csvs in a folder and rbind them
-base_path = "data/0TopicAnalysis/ta_run/"
+base_path = "data/0TopicAnalysis/ta_run_d_26_05_t_14_23/"
 filenames=list.files(path=base_path, pattern="*.csv")
 df = data.frame()
 for (i in filenames){
