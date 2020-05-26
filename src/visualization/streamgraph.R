@@ -13,6 +13,7 @@ for (i in filenames){
   day_df = read_csv(paste0(base_path, i))
   df = rbind(df, day_df)
 }
+df = df[df$publication_date<"2020-04-05",]
 
 # Stream graph with a legend
 get_sg = function(agg_type){
