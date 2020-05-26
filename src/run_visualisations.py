@@ -11,6 +11,7 @@ import visualization.get_viz_data as get_viz_data
 import visualization.matplotlib_viz as viz
 import visualization.bar_chart_race as bar_chart_race
 import visualization.world_map as world_map
+from visualization.visualize_sentiment_over_time import visualize_sent
 
 
 def cum_sum_df(df, mc_column, mc_num_column):
@@ -141,28 +142,44 @@ def prepare_countries(df, mc_column="mc_c"):
         # df.reset_index(drop=True, inplace=True)
         return df
 
+def prepare_sentiment(df, sent_column="c_sent"):
+        df['counts'] = 1
+        df = df.groupby(by=["publication_date"])
+        
+
+        df = df.agg(sum).reset_index()
+
+        df["avg_sent"] = df.apply(lambda x: pd.Series((x[sent_column]/x["counts"])), axis=1)
+
+        df = df[["publication_date", 'avg_sent']]
+
+        return df
+
 if __name__ == "__main__":
-
-        # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-        # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-        # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
-
-        # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
-
-        # -------  Country visualizer ------- 
-        # df_most_common = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
-        
-        # df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
-        #         sent_col="mc_p_sent", with_sentiment=True)
-        # print(df_most_common.head())
-        # start_date = df_most_common.publication_date.min()
-        # end_date = df_most_common.publication_date.max()
-        # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
-        
-
-
-        # -------  Country visualizer ------- 
         df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
-        c_list = prepare_countries(df, mc_column="mc_c")
 
-        world_map.show_world_map(c_list)
+        # -------  Country visualizer -------         
+        # df_country = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
+        #         sent_col="mc_p_sent", with_sentiment=True)
+        # print(df_country.head())
+        # start_date = df_country.publication_date.min()
+        # end_date = df_country.publication_date.max()
+        # visualize(df_country, start_date, end_date, "mc_p", "rolling_sent")
+        
+
+
+        # -------  Country visualizer ------- 
+        
+        # c_list = prepare_countries(df, mc_column="mc_c")
+
+        # world_map.show_world_map(c_list)
+
+        # --------- Sentiment visualizer ---------
+
+        # --- corona sent
+        df_sent = prepare_sentiment(df, sent_column="c_sent")
+        visualize_sent(df_sent, name="Corona")
+
+
+        # --- general sent
+        # prepare_sentiment(df, sent_column="g_sent")

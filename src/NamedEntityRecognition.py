@@ -368,7 +368,7 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
     while(c_date <= end_date):
         # try:
 
-        print("Running day: " + str(c_date.strftime("%d_%m_%Y")) + " till " + str(c_date.strftime("%d_%m_%Y") + timedelta(days=delta_d)))
+        print("Running day: " + str(c_date.strftime("%d_%m_%Y")) + " till " + str((c_date + timedelta(days=delta_d)).strftime("%d_%m_%Y")))
         print("Loading Data...\t", str(datetime.now()))
         if not debug:
             # df = read_data.get_body_df(
@@ -479,8 +479,8 @@ if __name__ == "__main__":
     start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
     end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
 
-    run_and_save(start_date, end_date, articles_per_period=500,
-         max_length=300, with_sentiments=True, debug=False, delta_d=5)
+    run_and_save(start_date, end_date, articles_per_period=1000,
+         max_length=500, with_sentiments=True, debug=False, delta_d=5)
     
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")

@@ -40,7 +40,7 @@ def show_world_map(df):
     ))
 
     fig.update_layout(
-        title_text='Referals in Corona News',
+        title_text='Mentions in Corona News',
         geo=dict(
             showframe=False,
             showcoastlines=False,
@@ -55,7 +55,6 @@ def show_world_map(df):
             showarrow = False
         )]
     )
-    fig.write_image("figures/worldmap_counts.png")
     fig.show()
     
 
@@ -74,7 +73,7 @@ def show_world_map(df):
     ))
 
     fig.update_layout(
-        title_text='Sentiment towards referred countries in Corona News',
+        title_text='Sentiment towards mentioned countries in Corona News',
         geo=dict(
             showframe=False,
             showcoastlines=False,
