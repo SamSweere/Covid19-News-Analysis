@@ -137,23 +137,25 @@ def prepare_countries(df, mc_column="mc_c"):
 if __name__ == "__main__":
 
         # TODO: dates 2019-11-06 and 2020-01-01 throw errors
-        start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
-        end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
+        # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
+        # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
 
         # run_and_save(start_date, end_date, articles_per_period = 1000, max_length = 500, debug=True)
 
         # -------  Country visualizer ------- 
-        # TODO load all dataframes for one experiment and concat them together
-        # df_most_common = get_viz_data.load_data("new_run_s_01_03_2020_e_05_04_2020_app_100_ml_300_d_25_05_t_18_51")
-        # df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
-        #         sent_col="g_sent", with_sentiment=True)
-        # print(df_most_common.head())
-        # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
+        df_most_common = get_viz_data.load_data("s_01_11_2019_e_05_04_2020_app_None_ml_1000_d_26_05_t_04_22")
+        
+        df_most_common = prepare_viz(df_most_common, mc_column="mc_p", mc_num_column="mc_p_num",
+                sent_col="mc_p_sent", with_sentiment=True)
+        print(df_most_common.head())
+        start_date = df_most_common.publication_date.min()
+        end_date = df_most_common.publication_date.max()
+        visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
         
 
 
-        # -------  Country visualizer ------- 
-        df = get_viz_data.load_data("s_03_04_2020_e_05_04_2020_app_100_ml_300_d_26_05_t_03_24")
-        c_list = prepare_countries(df, mc_column="mc_c")
+        # # -------  Country visualizer ------- 
+        # df = get_viz_data.load_data("s_01_11_2019_e_05_04_2020_app_None_ml_1000_d_26_05_t_04_22")
+        # c_list = prepare_countries(df, mc_column="mc_c")
 
-        world_map.show_world_map(c_list)
+        # world_map.show_world_map(c_list)

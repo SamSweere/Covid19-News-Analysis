@@ -4,7 +4,7 @@ import torch
 
 class GeneralSentimentAnalyzer:
     def __init__(self):
-        model_path = "models/xlnet_sentiment_2"
+        model_path = "models/xlnet_sentiment"
         print("Loading model:",model_path)
         self.s_nlp = spacy.load(model_path)
 

@@ -70,7 +70,7 @@ def get_body_df(n_articles=None, source_name=None, start_date=None, end_date=Non
     return df[["body", "publication_date"]]
 
 
-def get_representative_df(n_samples, start_date, end_date):
+def get_representative_df(n_samples, start_date, end_date, max_length=None):
     """ get a df representative of a given time period """
     counter = 0
     with jsonlines.open("data/aylien-covid-news.jsonl") as f:
@@ -79,14 +79,21 @@ def get_representative_df(n_samples, start_date, end_date):
             d_o_p = datetime.strptime(t, "%Y-%m-%d")
             if d_o_p < start_date:
                 break
-            if (d_o_p > start_date) and (d_o_p < end_date):
+            if (d_o_p >= start_date) and (d_o_p <= end_date):
                 counter += 1
+
+    if(n_samples is None):
+        n_samples = counter
 
     index_list = sorted(np.unique([np.random.randint(0, counter) for i in range(n_samples)]), reverse=True)
 
     bodies = []
     date_of_publication = []
     counter = 0
+
+    if not max_length:
+        max_length = np.inf
+    
     with jsonlines.open("data/aylien-covid-news.jsonl") as f:
         for line in f:
             if not index_list:
@@ -95,11 +102,15 @@ def get_representative_df(n_samples, start_date, end_date):
             d_o_p = datetime.strptime(t, "%Y-%m-%d")
             if d_o_p < start_date:
                 break
+            if len(line["body"]) > max_length:
+                # Crop the news message
+                line["body"] = line["body"][:max_length]
             if (d_o_p > start_date) and (d_o_p < end_date):
                 if counter == index_list[-1]:
                     index_list.pop()
                     date_of_publication.append(d_o_p)
                     bodies.append(line["body"])
+            
             counter += 1
     
     df = pd.DataFrame({
