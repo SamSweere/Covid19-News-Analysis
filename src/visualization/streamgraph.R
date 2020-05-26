@@ -5,7 +5,14 @@ library(streamgraph)
 library(tidyverse)
 library(htmlwidgets)
 
-df = read_csv("src/TopicAnalysis/topic_frequency.csv")
+# TODO load all the csvs in a folder and rbind them
+base_path = "data/0TopicAnalysis/ta_run/"
+filenames=list.files(path=base_path, pattern="*.csv")
+df = data.frame()
+for (i in filenames){
+  day_df = read_csv(paste0(base_path, i))
+  df = rbind(df, day_df)
+}
 
 # Stream graph with a legend
 get_sg = function(agg_type){
