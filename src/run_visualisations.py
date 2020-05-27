@@ -191,7 +191,7 @@ if __name__ == "__main__":
         start_date = df_most_common.publication_date.min()
         end_date = df_most_common.publication_date.max()
         visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
-        
+        # visualize(df_most_common, start_date, end_date, "mc_p", None)
 
         # -------  Country visualizer ------- 
         
