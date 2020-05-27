@@ -12,9 +12,13 @@ pip install extra_requirements.txt
 ```
 
 # Main Files
-Topic Analysis: src/NMF_TopicAnalysis.py
-Named Entity Recognition: src/NamedEntitiyRecognition.py
-Sentiment Analysis: src/sentiment/general_sentiment.py
-                    src/sentiment/target_based_sentiment.py
-Visualizations: src/run_visualizations.py, 
-                src/visualizations/streamgraph.R
+* Topic Analysis: 
+    * src/NMF_TopicAnalysis.py
+* Named Entity Recognition:
+    * src/NamedEntitiyRecognition.py
+* Sentiment Analysis:
+    * src/sentiment/general_sentiment.py
+    * src/sentiment/target_based_sentiment.py
+* Visualizations: 
+    * src/run_visualizations.py, 
+    * src/visualizations/streamgraph.R
