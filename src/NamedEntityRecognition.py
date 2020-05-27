@@ -365,7 +365,7 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
     NER = NamedEntityRecognizer(model_size="sm", with_sentiment=with_sentiments)  # model_size="lg")
 
     # Increase until we hit the last day
-    while(c_date <= end_date):
+    while(c_date < end_date):
         try:
 
             print("Running day: " + str(c_date.strftime("%d_%m_%Y")) + " till " + str((c_date + timedelta(days=delta_d)).strftime("%d_%m_%Y")))
@@ -476,8 +476,8 @@ if __name__ == "__main__":
         # end_date = df_most_common.publication_date.max()
         # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
 
-    start_date=datetime.strptime("2020-02-01", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-03-07", "%Y-%m-%d")
+    end_date=datetime.strptime("2020-03-11", "%Y-%m-%d")
 
     run_and_save(start_date, end_date, articles_per_period=1000,
          max_length=500, with_sentiments=True, debug=False, delta_d=1)
