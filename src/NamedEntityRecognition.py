@@ -407,7 +407,7 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
             df = NER.spacy_preprocessing(df) # model_size="lg")
             if with_sentiments:
                 df = NER.get_general_sentiment(df)
-            df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
+            # df.drop(columns=["body"], inplace=True) # Drop some columns to make some space
             df = NER.dbpedia_ner(df) #model_size="lg")
             df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Person", df_name =  "mc_p")  # entity "OfficeHolder" is quite nice, "Person" works as well
             df = NER.find_most_common_entities(df, "nlp_resolved", entity_type="Country", df_name =  "mc_c")
@@ -476,10 +476,10 @@ if __name__ == "__main__":
         # end_date = df_most_common.publication_date.max()
         # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
 
-    start_date=datetime.strptime("2020-03-07", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-03-11", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
+    end_date=datetime.strptime("2020-04-02", "%Y-%m-%d")
 
-    run_and_save(start_date, end_date, articles_per_period=1000,
+    run_and_save(start_date, end_date, articles_per_period=100,
          max_length=500, with_sentiments=True, debug=False, delta_d=1)
     
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")

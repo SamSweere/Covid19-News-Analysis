@@ -16,8 +16,10 @@ def show_world_map(df):
     # Remove rows that did not result in anything
     df = df[df.iso3 != "not found"]
 
+    mask = df['iso3'].apply(lambda x: isinstance(x, list))
+    df = df[~mask]
     # Re aggregate
-    df = df.groupby(["iso3", "country_short"]).sum()
+    df = df.groupby(by=["iso3", "country_short"]).sum()
     df = df.reset_index()
 
     # Normalize the sentiment
@@ -36,7 +38,7 @@ def show_world_map(df):
         reversescale=False,
         marker_line_color='darkgray',
         marker_line_width=0.5,
-        colorbar_title = 'Referals',
+        colorbar_title = 'Mentions',
     ))
 
     fig.update_layout(
@@ -55,6 +57,8 @@ def show_world_map(df):
             showarrow = False
         )]
     )
+    fig.write_html("figures/country_mentions.html")
+
     fig.show()
     
 
@@ -88,7 +92,7 @@ def show_world_map(df):
             showarrow = False
         )]
     )
-
+    fig.write_html("figures/country_sent.html")
     fig.show()
 
 

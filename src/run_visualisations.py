@@ -135,6 +135,7 @@ def prepare_countries(df, mc_column="mc_c"):
         # Fixes:
         df[mc_column].replace("Kingdom of Italy", "Italy", inplace=True)
         df[mc_column].replace("Republic of Ireland", "Ireland", inplace=True)
+        # df[mc_column].replace("Singapore", "Malaysia", inplace=True)
         
 
         df.dropna(subset=[mc_column], inplace=True)
@@ -168,8 +169,9 @@ def prepare_sentiment(df, sent_column="c_sent"):
         return df
 
 if __name__ == "__main__":
-        df = get_viz_data.load_data("s_16_03_2020_e_05_04_2020_app_1000_ml_500_d_27_05_t_01_33")
-
+        df = get_viz_data.load_data("final_run")
+        
+        df = df.drop_duplicates()
         # -------  Country visualizer -------         
         # df_country = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
         #         sent_col="mc_p_sent", with_sentiment=True)
@@ -199,12 +201,12 @@ if __name__ == "__main__":
 
         # --------- Sentiment visualizer ---------
 
-        # # --- corona sent
+        # --- corona sent
         # df_sent = prepare_sentiment(df, sent_column="c_sent")
         # visualize_sent(df_sent, name="Corona")
 
 
-        # # --- general sent
+        # --- general sent
         # df_sent = prepare_sentiment(df, sent_column="g_sent")
         # visualize_sent(df_sent, name="general")
 

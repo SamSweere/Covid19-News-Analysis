@@ -92,8 +92,8 @@ class TargetSentimentAnalyzer:
         }
 
         self.opt = get_parameters()
-        # self.opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.opt.device = torch.device("cpu")
+        self.opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.opt.device = torch.device("cpu")
 
         print("TargetSentimentAnalyzer using device:",self.opt.device)
 
