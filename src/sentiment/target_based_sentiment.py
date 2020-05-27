@@ -92,7 +92,8 @@ class TargetSentimentAnalyzer:
         }
 
         self.opt = get_parameters()
-        self.opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # self.opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.opt.device = torch.device("cpu")
 
         print("TargetSentimentAnalyzer using device:",self.opt.device)
 
@@ -102,7 +103,11 @@ class TargetSentimentAnalyzer:
 
 
         print('loading model {0} ...'.format(self.opt.model_name))
-        self.model.load_state_dict(torch.load(state_dict_paths[self.opt.model_name]))
+        self.model.load_state_dict(torch.load(state_dict_paths[self.opt.model_name], map_location=torch.device('cpu')))
+        # if torch.cuda.is_available():
+        # else:
+        #     self.model.load_state_dict(torch.load(state_dict_paths[self.opt.model_name]))
+
         self.model.eval()
         torch.autograd.set_grad_enabled(False)
 

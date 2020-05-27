@@ -168,7 +168,7 @@ def prepare_sentiment(df, sent_column="c_sent"):
         return df
 
 if __name__ == "__main__":
-        df = get_viz_data.load_data("s_01_02_2020_e_05_04_2020_app_500_ml_300_d_26_05_t_15_20")
+        df = get_viz_data.load_data("s_16_03_2020_e_05_04_2020_app_1000_ml_500_d_27_05_t_01_33")
 
         # -------  Country visualizer -------         
         # df_country = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
@@ -180,15 +180,15 @@ if __name__ == "__main__":
         
         # -------  Entity visualizer ------- 
         
-        # df_most_common = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
-        #         sent_col="mc_p_sent", with_sentiment=True)
-        # print(df_most_common.head())
+        df_most_common = prepare_viz(df, mc_column="mc_p", mc_num_column="mc_p_num",
+                sent_col="mc_p_sent", with_sentiment=True)
+        print(df_most_common.head())
 
-        # df_most_common["sent_bin"] = df_most_common["sent_norm"].apply(lambda x: 1 if x>0 else -1)
+        df_most_common["sent_bin"] = df_most_common["sent_norm"].apply(lambda x: 1 if x>0 else -1)
 
-        # start_date = df_most_common.publication_date.min()
-        # end_date = df_most_common.publication_date.max()
-        # visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
+        start_date = df_most_common.publication_date.min()
+        end_date = df_most_common.publication_date.max()
+        visualize(df_most_common, start_date, end_date, "mc_p", "mc_p_sent")
         
 
         # -------  Country visualizer ------- 
@@ -199,11 +199,13 @@ if __name__ == "__main__":
 
         # --------- Sentiment visualizer ---------
 
-        # --- corona sent
-        df_sent = prepare_sentiment(df, sent_column="c_sent")
-        visualize_sent(df_sent, name="Corona")
+        # # --- corona sent
+        # df_sent = prepare_sentiment(df, sent_column="c_sent")
+        # visualize_sent(df_sent, name="Corona")
 
 
-        # --- general sent
-        df_sent = prepare_sentiment(df, sent_column="g_sent")
-        visualize_sent(df_sent, name="general")
+        # # --- general sent
+        # df_sent = prepare_sentiment(df, sent_column="g_sent")
+        # visualize_sent(df_sent, name="general")
+
+        pass

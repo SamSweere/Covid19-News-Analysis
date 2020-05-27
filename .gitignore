@@ -7,6 +7,7 @@ tm_env/
 neuralcoref/
 experiments/
 state_dict/
+src/sentiment/target_based_sentiment.py
 
 *.csv
 *.jsonl
