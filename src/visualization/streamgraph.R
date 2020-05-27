@@ -27,9 +27,7 @@ get_sg = function(agg_type){
     width="1000px"
   ) %>%
     sg_legend(show=TRUE, label="Topics: ") %>%
-    sg_axis_x(1, "week", "%d-%m") %>%
-    sg_fill_brewer("Spectral") %>%
-    sg_title(sg, "Covid-19 Topic River") 
+    sg_axis_x(1, "week", "%d-%m")
     # sg_fill_manual(rev(rainbow(10)))
   
   return(pp)
