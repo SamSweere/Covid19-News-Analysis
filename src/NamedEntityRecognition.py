@@ -388,8 +388,14 @@ def run_and_save(start_date, end_date, articles_per_period=None, max_length=None
 
                 df = pd.DataFrame({
                     "body": [
-                    "New Zealand's two top public health bosses will be addressing New Zealand's to update New Zealand's on the latest Covid-19 developments. Director of Public Health Dr Caroline McElnay will join Director-General of Health Ashley Bloomfield..."],
-                    "publication_date": ["2020-04-05"]
+                    "The professor Yann LeCun hates it when his students have purple hair.",
+                    "The professor Yann LeCun does not like it when his students have purple hair.",
+                    "The professor Yann LeCun does likes it when his students have purple hair.",
+                    "People in Greenland do not have the burden of the coronavirus, since they are isolated from the rest of the world they do not have to worry about the disease and all its negative implications.",
+                    "People in Greenland have a great time, even though the coronavirus is terrible for the rest of the world they keep their positive vibe.",
+                    "People in Greenland do have the burden of the coronavirus, since they are isolated from the rest of the world they do have to worry about the disease and all its negative implications."
+                    ],
+                    "publication_date": ["2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05","2020-04-05"]
                 })
                 # df = pd.DataFrame({
                 #     "body": [
@@ -476,11 +482,11 @@ if __name__ == "__main__":
         # end_date = df_most_common.publication_date.max()
         # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
 
-    start_date=datetime.strptime("2020-03-15", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-03-16", "%Y-%m-%d")
+    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
+    end_date=datetime.strptime("2020-04-02", "%Y-%m-%d")
 
     run_and_save(start_date, end_date, articles_per_period=100,
-         max_length=500, with_sentiments=True, debug=False, delta_d=1)
+         max_length=500, with_sentiments=True, debug=True, delta_d=1)
     
     # start_date=datetime.strptime("2020-03-01", "%Y-%m-%d")
     # end_date=datetime.strptime("2020-04-05", "%Y-%m-%d")
