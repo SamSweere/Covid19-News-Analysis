@@ -476,13 +476,8 @@ if __name__ == "__main__":
         # end_date = df_most_common.publication_date.max()
         # visualize(df_most_common, start_date, end_date, "mc_p", "rolling_sent")
 
-<<<<<<< HEAD
-    start_date=datetime.strptime("2020-04-01", "%Y-%m-%d")
-    end_date=datetime.strptime("2020-04-02", "%Y-%m-%d")
-=======
     start_date=datetime.strptime("2020-03-15", "%Y-%m-%d")
     end_date=datetime.strptime("2020-03-16", "%Y-%m-%d")
->>>>>>> d2fedf72ec4a74dd30395d7dff41a99233db9b7a
 
     run_and_save(start_date, end_date, articles_per_period=100,
          max_length=500, with_sentiments=True, debug=False, delta_d=1)
