@@ -1,5 +1,5 @@
 
-# Covid-19 News Topic River
+# Covid-19 News Topic River (2020)
 # ![Alt text](/figures/gg_stream_mean.png?raw=true "Covid-19 News Topic River")
 # Covid-19 News Sentiments towards Countries
 # ![Alt text](/figures/country_sentiment.png?raw=true "Covid-19 News Sentiments towards Countries")
